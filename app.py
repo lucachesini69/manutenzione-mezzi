@@ -4,7 +4,7 @@ import json
 import os
 from database import DatabaseManager
 from models import VeicoloService, ManutenzioneService, TIPI_MANUTENZIONE, TIPI_VEICOLI
-from google_drive_backup import GoogleDriveBackup
+from email_backup import EmailBackup
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 
@@ -16,8 +16,8 @@ db_manager = DatabaseManager()
 veicolo_service = VeicoloService(db_manager)
 manutenzione_service = ManutenzioneService(db_manager)
 
-# Inizializza backup Google Drive
-backup_service = GoogleDriveBackup()
+# Inizializza backup Email
+backup_service = EmailBackup()
 
 # Funzione di backup automatico
 def backup_automatico():
@@ -27,7 +27,7 @@ def backup_automatico():
         success = backup_service.backup_database()
         if success:
             print("✅ Backup automatico completato")
-            backup_service.cleanup_old_backups(keep_count=10)
+        # Email backup non ha cleanup (ogni email è un backup)
         else:
             print("❌ Backup automatico fallito")
     except Exception as e:
@@ -211,15 +211,15 @@ def backup_database():
         flash(f'Errore durante il backup: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
 
-@app.route('/backup-drive')
-def backup_to_drive():
-    """Esegue backup manuale su Google Drive"""
+@app.route('/backup-email')
+def backup_to_email():
+    """Esegue backup manuale via email"""
     try:
         success = backup_service.backup_database()
         if success:
-            flash('✅ Backup su Google Drive completato con successo!', 'success')
+            flash('✅ Backup inviato via email con successo!', 'success')
         else:
-            flash('❌ Errore durante il backup su Google Drive. Controlla le credenziali.', 'error')
+            flash('❌ Errore durante il backup email. Controlla le credenziali.', 'error')
     except Exception as e:
         flash(f'❌ Errore durante il backup: {str(e)}', 'error')
     return redirect(url_for('dashboard'))
