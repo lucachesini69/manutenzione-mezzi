@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}Nuova Manutenzione - Gestione Manutenzione Mezzi{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Registra nuova manutenzione</h1>
+    <p class="page-subtitle">Aggiungi un nuovo intervento di manutenzione</p>
+</div>
+
+<div class="form-container">
+    <form method="POST" class="maintenance-form">
+        <div class="form-section">
+            <h2>Informazioni di base</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="veicolo_id" class="form-label">Veicolo *</label>
+                    <select id="veicolo_id" name="veicolo_id" class="form-select" required>
+                        <option value="">Seleziona il veicolo</option>
+                        {% for veicolo in veicoli %}
+                        <option value="{{ veicolo.id }}"
+                                {% if veicolo_id_preselezionato and veicolo.id == veicolo_id_preselezionato|int %}selected{% endif %}
+                                data-km="{{ veicolo.km_attuali }}">
+                            {{ veicolo.nome }} ({{ veicolo.tipo }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if not veicoli %}
+                        <small class="help-text">⚠️ Nessun veicolo disponibile. <a href="{{ url_for('nuovo_veicolo') }}">Aggiungi prima un veicolo</a></small>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="data_intervento" class="form-label">Data intervento *</label>
+                    <input type="date" id="data_intervento" name="data_intervento" class="form-input" required>
+                    <small class="help-text">Data in cui è stata eseguita la manutenzione</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="km_intervento" class="form-label">Chilometraggio *</label>
+                    <input type="number" id="km_intervento" name="km_intervento" class="form-input"
+                           min="0" step="1" required placeholder="es. 15000">
+                    <small class="help-text">Chilometraggio al momento dell'intervento</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="tipo_manutenzione" class="form-label">Tipo di manutenzione *</label>
+                    <select id="tipo_manutenzione" name="tipo_manutenzione" class="form-select" required>
+                        <option value="">Seleziona il tipo</option>
+                        {% for tipo in tipi_manutenzione %}
+                        <option value="{{ tipo }}">{{ tipo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Dettagli aggiuntivi</h2>
+            <div class="form-group">
+                <label for="descrizione" class="form-label">Descrizione dettagliata</label>
+                <textarea id="descrizione" name="descrizione" class="form-textarea" rows="4"
+                          placeholder="Descrivi nel dettaglio l'intervento eseguito, parti sostituite, problemi risolti..."></textarea>
+                <small class="help-text">Informazioni dettagliate sull'intervento (opzionale)</small>
+            </div>
+
+            <div class="form-group">
+                <label for="costo" class="form-label">Costo (€)</label>
+                <input type="number" id="costo" name="costo" class="form-input"
+                       min="0" step="0.01" placeholder="es. 45.50">
+                <small class="help-text">Costo totale dell'intervento (opzionale)</small>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Programmazione prossima manutenzione</h2>
+            <p class="section-description">Imposta quando dovrebbe essere eseguita la prossima manutenzione di questo tipo</p>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="prossima_manutenzione_km" class="form-label">Prossimi chilometri</label>
+                    <input type="number" id="prossima_manutenzione_km" name="prossima_manutenzione_km"
+                           class="form-input" min="0" step="1" placeholder="es. 20000">
+                    <small class="help-text">Chilometraggio per la prossima manutenzione</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="prossima_manutenzione_data" class="form-label">Prossima data</label>
+                    <input type="date" id="prossima_manutenzione_data" name="prossima_manutenzione_data" class="form-input">
+                    <small class="help-text">Data prevista per la prossima manutenzione</small>
+                </div>
+            </div>
+
+            <div class="quick-intervals">
+                <h4>Intervalli comuni:</h4>
+                <div class="interval-buttons">
+                    <button type="button" class="btn btn-sm btn-outline" onclick="aggiungiIntervallo(5000)">+5.000 km</button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="aggiungiIntervallo(10000)">+10.000 km</button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="aggiungiIntervallo(15000)">+15.000 km</button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="aggiungiData(6)">+6 mesi</button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="aggiungiData(12)">+1 anno</button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="aggiungiData(24)">+2 anni</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('lista_manutenzioni') }}" class="btn btn-secondary">Annulla</a>
+            <button type="submit" class="btn btn-primary">💾 Salva manutenzione</button>
+        </div>
+    </form>
+</div>
+
+<div class="tips-section">
+    <h3>💡 Suggerimenti</h3>
+    <div class="tips-grid">
+        <div class="tip-card">
+            <div class="tip-icon">📅</div>
+            <h4>Data precisa</h4>
+            <p>Inserisci la data esatta dell'intervento per tenere uno storico accurato.</p>
+        </div>
+        <div class="tip-card">
+            <div class="tip-icon">🛣️</div>
+            <h4>Chilometraggio corretto</h4>
+            <p>Il chilometraggio deve essere superiore o uguale a quello attuale del veicolo.</p>
+        </div>
+        <div class="tip-card">
+            <div class="tip-icon">📝</div>
+            <h4>Descrizione dettagliata</h4>
+            <p>Aggiungi dettagli su parti sostituite, problemi risolti e officina utilizzata.</p>
+        </div>
+        <div class="tip-card">
+            <div class="tip-icon">⏰</div>
+            <h4>Promemoria futuro</h4>
+            <p>Imposta la prossima scadenza per non dimenticare manutenzioni importanti.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Imposta la data di oggi come default
+document.getElementById('data_intervento').value = new Date().toISOString().split('T')[0];
+
+// Aggiorna il chilometraggio suggerito quando si seleziona un veicolo
+document.getElementById('veicolo_id').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    if (selectedOption.value) {
+        const kmAttuali = selectedOption.dataset.km;
+        const kmInput = document.getElementById('km_intervento');
+        if (!kmInput.value) {
+            kmInput.value = kmAttuali;
+            kmInput.min = kmAttuali;
+        }
+    }
+});
+
+// Validazione form
+document.querySelector('.maintenance-form').addEventListener('submit', function(e) {
+    const veicoloId = document.getElementById('veicolo_id').value;
+    const dataIntervento = document.getElementById('data_intervento').value;
+    const kmIntervento = document.getElementById('km_intervento').value;
+    const tipoManutenzione = document.getElementById('tipo_manutenzione').value;
+
+    if (!veicoloId) {
+        e.preventDefault();
+        mostraErrore('Seleziona un veicolo');
+        document.getElementById('veicolo_id').focus();
+        return;
+    }
+
+    if (!dataIntervento) {
+        e.preventDefault();
+        mostraErrore('Inserisci la data dell\'intervento');
+        document.getElementById('data_intervento').focus();
+        return;
+    }
+
+    if (!kmIntervento || kmIntervento < 0) {
+        e.preventDefault();
+        mostraErrore('Inserisci un chilometraggio valido');
+        document.getElementById('km_intervento').focus();
+        return;
+    }
+
+    if (!tipoManutenzione) {
+        e.preventDefault();
+        mostraErrore('Seleziona il tipo di manutenzione');
+        document.getElementById('tipo_manutenzione').focus();
+        return;
+    }
+
+    // Validazione data non futura
+    const oggi = new Date();
+    const dataInserita = new Date(dataIntervento);
+    if (dataInserita > oggi) {
+        e.preventDefault();
+        mostraErrore('La data dell\'intervento non può essere futura');
+        document.getElementById('data_intervento').focus();
+        return;
+    }
+
+    // Validazione chilometraggio vs veicolo
+    const selectedOption = document.getElementById('veicolo_id').options[document.getElementById('veicolo_id').selectedIndex];
+    const kmVeicolo = parseInt(selectedOption.dataset.km);
+    if (parseInt(kmIntervento) < kmVeicolo) {
+        if (!confirm(`Il chilometraggio inserito (${kmIntervento}) è inferiore a quello attuale del veicolo (${kmVeicolo}). Continuare?`)) {
+            e.preventDefault();
+            return;
+        }
+    }
+});
+
+// Funzioni per gli intervalli rapidi
+function aggiungiIntervallo(km) {
+    const kmInterventoInput = document.getElementById('km_intervento');
+    const prossimaKmInput = document.getElementById('prossima_manutenzione_km');
+
+    if (kmInterventoInput.value) {
+        const kmAttuali = parseInt(kmInterventoInput.value);
+        prossimaKmInput.value = kmAttuali + km;
+    }
+}
+
+function aggiungiData(mesi) {
+    const dataInterventoInput = document.getElementById('data_intervento');
+    const prossimaDataInput = document.getElementById('prossima_manutenzione_data');
+
+    if (dataInterventoInput.value) {
+        const dataIntervento = new Date(dataInterventoInput.value);
+        dataIntervento.setMonth(dataIntervento.getMonth() + mesi);
+        prossimaDataInput.value = dataIntervento.toISOString().split('T')[0];
+    }
+}
+
+// Formattazione automatica del costo
+document.getElementById('costo').addEventListener('input', function(e) {
+    let value = e.target.value;
+    if (value && !isNaN(value)) {
+        const numero = parseFloat(value);
+        if (numero >= 0) {
+            e.target.value = numero.toFixed(2);
+        }
+    }
+});
+
+function mostraErrore(messaggio) {
+    // Rimuovi messaggi di errore esistenti
+    const esistenti = document.querySelectorAll('.form-error');
+    esistenti.forEach(el => el.remove());
+
+    // Crea nuovo messaggio di errore
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'form-error';
+    errorDiv.textContent = messaggio;
+
+    // Inserisci all'inizio del form
+    const form = document.querySelector('.maintenance-form');
+    form.insertBefore(errorDiv, form.firstChild);
+
+    // Scroll verso l'errore
+    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Rimuovi dopo 5 secondi
+    setTimeout(() => {
+        if (errorDiv.parentElement) {
+            errorDiv.remove();
+        }
+    }, 5000);
+}
+
+// Auto-focus sul primo campo se non preselezionato
+{% if not veicolo_id_preselezionato %}
+document.getElementById('veicolo_id').focus();
+{% else %}
+document.getElementById('data_intervento').focus();
+{% endif %}
+
+// Se il tipo "Altro" è selezionato, suggerisci di aggiungere dettagli
+document.getElementById('tipo_manutenzione').addEventListener('change', function() {
+    if (this.value === 'Altro') {
+        const descrizioneInput = document.getElementById('descrizione');
+        if (!descrizioneInput.value) {
+            descrizioneInput.placeholder = 'Specifica il tipo di manutenzione eseguita...';
+            setTimeout(() => descrizioneInput.focus(), 100);
+        }
+    }
+});
+</script>
+{% endblock %}

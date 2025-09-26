@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Gestione Manutenzione Mezzi</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .header { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 8px; text-align: center; }
+        .stat-number { font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .stat-label { font-size: 0.9rem; opacity: 0.9; }
+        .section { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 1.5rem 0; }
+        .section h2 { color: #2d3748; margin-bottom: 1rem; font-size: 1.5rem; }
+        .vehicle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+        .vehicle-card { background: #f7fafc; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 6px; }
+        .vehicle-name { font-weight: 600; font-size: 1.1rem; color: #2d3748; margin-bottom: 0.5rem; }
+        .vehicle-type { background: #667eea; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; display: inline-block; margin-bottom: 0.5rem; }
+        .vehicle-km { color: #4a5568; }
+        .btn { background: #667eea; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 6px; display: inline-block; margin: 0.5rem 0.5rem 0.5rem 0; font-weight: 500; transition: background 0.2s; }
+        .btn:hover { background: #5a67d8; }
+        .btn-success { background: #48bb78; }
+        .btn-success:hover { background: #38a169; }
+        .empty-state { text-align: center; padding: 3rem; color: #718096; }
+        .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .maintenance-item { background: #f7fafc; border-left: 4px solid #fbd38d; padding: 1rem; margin: 0.5rem 0; border-radius: 0 6px 6px 0; }
+        .maintenance-urgent { border-left-color: #f56565; }
+        .maintenance-title { font-weight: 600; color: #2d3748; }
+        .maintenance-vehicle { color: #667eea; font-size: 0.9rem; }
+        .maintenance-date { color: #718096; font-size: 0.9rem; margin-top: 0.5rem; }
+        .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 2rem; }
+        .quick-action { background: white; border: 2px solid #e2e8f0; padding: 1.5rem; border-radius: 8px; text-align: center; text-decoration: none; color: #2d3748; transition: all 0.2s; }
+        .quick-action:hover { border-color: #667eea; transform: translateY(-2px); }
+        .quick-action-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .nav { background: white; padding: 1rem 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        .nav-content { max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .nav-brand { font-size: 1.5rem; font-weight: bold; color: #2d3748; text-decoration: none; }
+        .nav-links { display: flex; gap: 2rem; }
+        .nav-link { color: #4a5568; text-decoration: none; font-weight: 500; }
+        .nav-link:hover { color: #667eea; }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-content">
+            <a href="/" class="nav-brand">🔧 Manutenzione Mezzi</a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Dashboard</a>
+                <a href="/veicoli" class="nav-link">Veicoli</a>
+                <a href="/manutenzioni" class="nav-link">Manutenzioni</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>Dashboard</h1>
+            <p>Panoramica generale dei tuoi veicoli e manutenzioni</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.num_veicoli }}</div>
+                <div class="stat-label">Veicoli registrati</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.num_manutenzioni_totali }}</div>
+                <div class="stat-label">Manutenzioni totali</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.prossime_scadenze }}</div>
+                <div class="stat-label">Prossime scadenze</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>I tuoi veicoli</h2>
+
+            {% if veicoli %}
+                <div class="vehicle-grid">
+                    {% for veicolo in veicoli %}
+                    <div class="vehicle-card">
+                        <div class="vehicle-name">{{ veicolo.nome }}</div>
+                        <div class="vehicle-type">{{ veicolo.tipo }}</div>
+                        <div class="vehicle-km">{{ veicolo.km_attuali }} km</div>
+                        {% if veicolo.note %}
+                        <div style="color: #718096; font-size: 0.9rem; margin-top: 0.5rem;">{{ veicolo.note }}</div>
+                        {% endif %}
+                        <div style="margin-top: 1rem;">
+                            <a href="/veicoli/{{ veicolo.id }}" class="btn">Dettagli</a>
+                            <a href="/manutenzioni/nuova?veicolo_id={{ veicolo.id }}" class="btn btn-success">Manutenzione</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">🚗</div>
+                    <h3>Nessun veicolo registrato</h3>
+                    <p>Inizia aggiungendo il tuo primo veicolo</p>
+                    <a href="/veicoli/nuovo" class="btn">Aggiungi primo veicolo</a>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if prossime_manutenzioni %}
+        <div class="section">
+            <h2>Prossime manutenzioni ({{ prossime_manutenzioni|length }})</h2>
+            {% for manutenzione in prossime_manutenzioni %}
+            <div class="maintenance-item maintenance-urgent">
+                <div class="maintenance-title">{{ manutenzione.tipo_manutenzione }}</div>
+                <div class="maintenance-vehicle">{{ manutenzione.nome_veicolo }}</div>
+                <div class="maintenance-date">
+                    {% if manutenzione.prossima_manutenzione_data %}Scadenza: {{ manutenzione.prossima_manutenzione_data.strftime('%d/%m/%Y') }}{% endif %}
+                    {% if manutenzione.prossima_manutenzione_km %}Km: {{ manutenzione.prossima_manutenzione_km }}{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if ultime_manutenzioni %}
+        <div class="section">
+            <h2>Ultime manutenzioni</h2>
+            {% for manutenzione in ultime_manutenzioni %}
+            <div class="maintenance-item">
+                <div class="maintenance-title">{{ manutenzione.tipo_manutenzione }}</div>
+                <div class="maintenance-vehicle">{{ manutenzione.nome_veicolo }}</div>
+                <div class="maintenance-date">{{ manutenzione.data_intervento.strftime('%d/%m/%Y') }} - {{ manutenzione.km_intervento }} km</div>
+            </div>
+            {% endfor %}
+            <div style="text-align: center; margin-top: 1rem;">
+                <a href="/manutenzioni" class="btn">Vedi tutte le manutenzioni</a>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="quick-actions">
+            <a href="/veicoli/nuovo" class="quick-action">
+                <div class="quick-action-icon">🚗</div>
+                <h3>Aggiungi veicolo</h3>
+                <p>Registra un nuovo mezzo</p>
+            </a>
+            <a href="/manutenzioni/nuova" class="quick-action">
+                <div class="quick-action-icon">🔧</div>
+                <h3>Nuova manutenzione</h3>
+                <p>Registra un intervento</p>
+            </a>
+            <a href="/backup" class="quick-action">
+                <div class="quick-action-icon">📥</div>
+                <h3>Backup dati</h3>
+                <p>Scarica backup del database</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

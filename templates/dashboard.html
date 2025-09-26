@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Gestione Manutenzione Mezzi{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Dashboard</h1>
+    <p class="page-subtitle">Panoramica generale dei tuoi veicoli e manutenzioni</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">🚗</div>
+        <div class="stat-content">
+            <h3>{{ stats.num_veicoli }}</h3>
+            <p>Veicoli registrati</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🔧</div>
+        <div class="stat-content">
+            <h3>{{ stats.num_manutenzioni_totali }}</h3>
+            <p>Manutenzioni totali</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">⚠️</div>
+        <div class="stat-content">
+            <h3>{{ stats.prossime_scadenze }}</h3>
+            <p>Prossime scadenze</p>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h2>I tuoi veicoli</h2>
+            <a href="{{ url_for('nuovo_veicolo') }}" class="btn btn-primary">➕ Aggiungi veicolo</a>
+        </div>
+
+        {% if veicoli %}
+            <div class="vehicle-grid">
+                {% for veicolo in veicoli %}
+                <div class="vehicle-card">
+                    <div class="vehicle-info">
+                        <h3>{{ veicolo.nome }}</h3>
+                        <p class="vehicle-type">{{ veicolo.tipo }}</p>
+                        <p class="vehicle-km">{{ veicolo.km_attuali | format_km }}</p>
+                        {% if veicolo.anno %}
+                            <p class="vehicle-year">Anno: {{ veicolo.anno }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="vehicle-actions">
+                        <a href="{{ url_for('dettaglio_veicolo', veicolo_id=veicolo.id) }}" class="btn btn-sm">Dettagli</a>
+                        <a href="{{ url_for('nuova_manutenzione', veicolo_id=veicolo.id) }}" class="btn btn-sm btn-success">➕ Manutenzione</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🚗</div>
+                <h3>Nessun veicolo registrato</h3>
+                <p>Inizia aggiungendo il tuo primo veicolo</p>
+                <a href="{{ url_for('nuovo_veicolo') }}" class="btn btn-primary">➕ Aggiungi primo veicolo</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h2>Prossime manutenzioni</h2>
+            {% if prossime_manutenzioni %}
+                <span class="badge badge-warning">{{ prossime_manutenzioni|length }}</span>
+            {% endif %}
+        </div>
+
+        {% if prossime_manutenzioni %}
+            <div class="maintenance-list">
+                {% for manutenzione in prossime_manutenzioni %}
+                <div class="maintenance-item urgent">
+                    <div class="maintenance-info">
+                        <h4>{{ manutenzione.nome_veicolo }}</h4>
+                        <p>{{ manutenzione.tipo_manutenzione }}</p>
+                        <div class="maintenance-schedule">
+                            {% if manutenzione.prossima_manutenzione_data %}
+                                <span class="schedule-date">📅 {{ manutenzione.prossima_manutenzione_data | format_date }}</span>
+                            {% endif %}
+                            {% if manutenzione.prossima_manutenzione_km %}
+                                <span class="schedule-km">🛣️ {{ manutenzione.prossima_manutenzione_km | format_km }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="maintenance-actions">
+                        <a href="{{ url_for('nuova_manutenzione', veicolo_id=manutenzione.veicolo_id) }}" class="btn btn-sm btn-success">Esegui</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state-small">
+                <p>✅ Nessuna manutenzione in scadenza</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h2>Ultime manutenzioni</h2>
+            <a href="{{ url_for('lista_manutenzioni') }}" class="btn btn-sm">Vedi tutte</a>
+        </div>
+
+        {% if ultime_manutenzioni %}
+            <div class="maintenance-list">
+                {% for manutenzione in ultime_manutenzioni %}
+                <div class="maintenance-item">
+                    <div class="maintenance-info">
+                        <h4>{{ manutenzione.nome_veicolo }}</h4>
+                        <p>{{ manutenzione.tipo_manutenzione }}</p>
+                        <div class="maintenance-details">
+                            <span>📅 {{ manutenzione.data_intervento | format_date }}</span>
+                            <span>🛣️ {{ manutenzione.km_intervento | format_km }}</span>
+                            {% if manutenzione.costo %}
+                                <span>💰 {{ manutenzione.costo | format_currency }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state-small">
+                <p>Nessuna manutenzione registrata</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="quick-actions">
+    <h2>Azioni rapide</h2>
+    <div class="quick-actions-grid">
+        <a href="{{ url_for('nuovo_veicolo') }}" class="quick-action-card">
+            <div class="quick-action-icon">🚗</div>
+            <h3>Aggiungi veicolo</h3>
+            <p>Registra un nuovo mezzo</p>
+        </a>
+        <a href="{{ url_for('nuova_manutenzione') }}" class="quick-action-card">
+            <div class="quick-action-icon">🔧</div>
+            <h3>Nuova manutenzione</h3>
+            <p>Registra un intervento</p>
+        </a>
+        <a href="{{ url_for('lista_manutenzioni') }}" class="quick-action-card">
+            <div class="quick-action-icon">📋</div>
+            <h3>Storico completo</h3>
+            <p>Visualizza tutte le manutenzioni</p>
+        </a>
+        <a href="{{ url_for('backup_database') }}" class="quick-action-card">
+            <div class="quick-action-icon">📥</div>
+            <h3>Backup dati</h3>
+            <p>Scarica backup del database</p>
+        </a>
+    </div>
+</div>
+{% endblock %}

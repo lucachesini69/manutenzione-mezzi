@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}{{ veicolo.nome }} - Gestione Manutenzione Mezzi{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-section">
+        <h1>{{ veicolo.nome }}</h1>
+        <span class="vehicle-type-badge">{{ veicolo.tipo }}</span>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('nuova_manutenzione', veicolo_id=veicolo.id) }}" class="btn btn-primary">🔧 Nuova manutenzione</a>
+        <a href="{{ url_for('lista_veicoli') }}" class="btn btn-secondary">← Torna ai veicoli</a>
+    </div>
+</div>
+
+<div class="vehicle-detail-grid">
+    <!-- Informazioni veicolo -->
+    <div class="vehicle-info-card">
+        <h2>Informazioni veicolo</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">Nome:</span>
+                <span class="info-value">{{ veicolo.nome }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Tipo:</span>
+                <span class="info-value">{{ veicolo.tipo }}</span>
+            </div>
+            {% if veicolo.anno %}
+            <div class="info-item">
+                <span class="info-label">Anno:</span>
+                <span class="info-value">{{ veicolo.anno }}</span>
+            </div>
+            {% endif %}
+            <div class="info-item">
+                <span class="info-label">Chilometraggio:</span>
+                <span class="info-value km-editable" data-veicolo-id="{{ veicolo.id }}">
+                    {{ veicolo.km_attuali | format_km }}
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Registrato il:</span>
+                <span class="info-value">{{ veicolo.data_creazione.strftime('%d/%m/%Y') if veicolo.data_creazione else 'N/A' }}</span>
+            </div>
+            {% if veicolo.note %}
+            <div class="info-item full-width">
+                <span class="info-label">Note:</span>
+                <span class="info-value note-text">{{ veicolo.note }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Statistiche -->
+    {% if stats and stats[0] > 0 %}
+    <div class="stats-card">
+        <h2>Statistiche manutenzioni</h2>
+        <div class="stats-grid-small">
+            <div class="stat-item">
+                <span class="stat-number">{{ stats[0] }}</span>
+                <span class="stat-label">Interventi</span>
+            </div>
+            {% if stats[1] %}
+            <div class="stat-item">
+                <span class="stat-number">{{ stats[1] | format_currency }}</span>
+                <span class="stat-label">Spesa totale</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ stats[2] | format_currency }}</span>
+                <span class="stat-label">Spesa media</span>
+            </div>
+            {% endif %}
+        </div>
+        {% if stats[3] and stats[4] %}
+        <div class="date-range">
+            <p><strong>Periodo:</strong> dal {{ stats[3] | format_date }} al {{ stats[4] | format_date }}</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Storico manutenzioni -->
+<div class="maintenance-history">
+    <div class="section-header">
+        <h2>Storico manutenzioni</h2>
+        {% if manutenzioni %}
+            <span class="badge">{{ manutenzioni|length }} interventi</span>
+        {% endif %}
+    </div>
+
+    {% if manutenzioni %}
+        <div class="maintenance-timeline">
+            {% for manutenzione in manutenzioni %}
+            <div class="timeline-item">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <div class="maintenance-card">
+                        <div class="maintenance-header">
+                            <h3>{{ manutenzione.tipo_manutenzione }}</h3>
+                            <div class="maintenance-meta">
+                                <span class="maintenance-date">📅 {{ manutenzione.data_intervento | format_date }}</span>
+                                <span class="maintenance-km">🛣️ {{ manutenzione.km_intervento | format_km }}</span>
+                                {% if manutenzione.costo %}
+                                    <span class="maintenance-cost">💰 {{ manutenzione.costo | format_currency }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if manutenzione.descrizione %}
+                        <div class="maintenance-description">
+                            <p>{{ manutenzione.descrizione }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if manutenzione.prossima_manutenzione_km or manutenzione.prossima_manutenzione_data %}
+                        <div class="next-maintenance">
+                            <h4>Prossima manutenzione:</h4>
+                            <div class="next-maintenance-info">
+                                {% if manutenzione.prossima_manutenzione_data %}
+                                    <span class="next-date">📅 {{ manutenzione.prossima_manutenzione_data | format_date }}</span>
+                                {% endif %}
+                                {% if manutenzione.prossima_manutenzione_km %}
+                                    <span class="next-km">🛣️ {{ manutenzione.prossima_manutenzione_km | format_km }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="maintenance-actions">
+                            <button class="btn btn-sm btn-danger" onclick="eliminaManutenzione({{ manutenzione.id }})">🗑️ Elimina</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🔧</div>
+            <h3>Nessuna manutenzione registrata</h3>
+            <p>Inizia registrando la prima manutenzione per questo veicolo</p>
+            <a href="{{ url_for('nuova_manutenzione', veicolo_id=veicolo.id) }}" class="btn btn-primary">🔧 Prima manutenzione</a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal per aggiornamento chilometraggio -->
+<div id="kmModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Aggiorna chilometraggio</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="kmForm">
+                <div class="form-group">
+                    <label for="nuoviKm">Nuovo chilometraggio:</label>
+                    <input type="number" id="nuoviKm" name="nuoviKm" min="0" step="1" required>
+                    <small class="help-text">Inserisci il chilometraggio attuale del veicolo</small>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="chiudiKmModal()">Annulla</button>
+            <button class="btn btn-primary" onclick="salvaKm()">Salva</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Gestione aggiornamento chilometraggio
+document.querySelector('.km-editable').addEventListener('click', function() {
+    const kmAttuali = parseInt(this.textContent.replace(/[^\d]/g, ''));
+    document.getElementById('nuoviKm').value = kmAttuali;
+    document.getElementById('kmModal').style.display = 'block';
+});
+
+function chiudiKmModal() {
+    document.getElementById('kmModal').style.display = 'none';
+}
+
+function salvaKm() {
+    const nuoviKm = document.getElementById('nuoviKm').value;
+    const veicoloId = {{ veicolo.id }};
+
+    if (!nuoviKm) return;
+
+    fetch(`/api/veicoli/${veicoloId}/km`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ km: parseInt(nuoviKm) })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Aggiorna il valore visualizzato
+            const elemento = document.querySelector('.km-editable');
+            elemento.textContent = new Intl.NumberFormat('it-IT').format(nuoviKm) + ' km';
+            chiudiKmModal();
+            mostraMessaggio('Chilometraggio aggiornato con successo', 'success');
+        } else {
+            mostraMessaggio('Errore nell\'aggiornamento: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        mostraMessaggio('Errore di connessione', 'error');
+    });
+}
+
+// Elimina manutenzione
+function eliminaManutenzione(manutenzioneId) {
+    if (confirm('Sei sicuro di voler eliminare questa manutenzione? L\'azione non può essere annullata.')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/manutenzioni/${manutenzioneId}/elimina`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Gestione modal
+document.querySelector('.close').onclick = function() {
+    chiudiKmModal();
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById('kmModal');
+    if (event.target == modal) {
+        chiudiKmModal();
+    }
+}
+
+// Funzione per mostrare messaggi
+function mostraMessaggio(messaggio, tipo) {
+    const flashMessages = document.querySelector('.flash-messages') || createFlashContainer();
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `flash-message flash-${tipo}`;
+    messageDiv.innerHTML = `
+        <span>${messaggio}</span>
+        <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+    `;
+    flashMessages.appendChild(messageDiv);
+
+    setTimeout(() => {
+        if (messageDiv.parentElement) {
+            messageDiv.remove();
+        }
+    }, 5000);
+}
+
+function createFlashContainer() {
+    const container = document.createElement('div');
+    container.className = 'flash-messages';
+    document.querySelector('.main-content').insertBefore(container, document.querySelector('.page-header'));
+    return container;
+}
+</script>
+{% endblock %}

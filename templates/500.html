@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Errore del Server - Gestione Manutenzione Mezzi{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <h1 class="error-title">500</h1>
+        <h2 class="error-subtitle">Errore del server</h2>
+        <p class="error-message">
+            Si è verificato un errore interno. Riprova tra qualche istante o riavvia l'applicazione.
+        </p>
+        <div class="error-details">
+            <details>
+                <summary>Cosa puoi fare</summary>
+                <ul>
+                    <li>Ricarica la pagina (F5)</li>
+                    <li>Torna alla dashboard e riprova</li>
+                    <li>Riavvia l'applicazione se il problema persiste</li>
+                    <li>Controlla che il database non sia corrotto</li>
+                </ul>
+            </details>
+        </div>
+        <div class="error-actions">
+            <button onclick="window.location.reload()" class="btn btn-primary">🔄 Ricarica Pagina</button>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">🏠 Torna alla Dashboard</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    text-align: center;
+}
+
+.error-container {
+    max-width: 600px;
+    padding: 2rem;
+}
+
+.error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.error-title {
+    font-size: 6rem;
+    font-weight: 700;
+    color: var(--danger-color);
+    margin-bottom: 0.5rem;
+    line-height: 1;
+}
+
+.error-subtitle {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.error-message {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.error-details {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.error-details summary {
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    margin-bottom: 1rem;
+}
+
+.error-details ul {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+.error-details li {
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+    .error-title {
+        font-size: 4rem;
+    }
+
+    .error-subtitle {
+        font-size: 1.5rem;
+    }
+
+    .error-actions {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

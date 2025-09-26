@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gestione Manutenzione Mezzi{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="{{ url_for('dashboard') }}">🔧 Manutenzione Mezzi</a>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('lista_veicoli') }}" class="nav-link {% if 'veicoli' in request.endpoint %}active{% endif %}">
+                        Veicoli
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('lista_manutenzioni') }}" class="nav-link {% if 'manutenzioni' in request.endpoint %}active{% endif %}">
+                        Manutenzioni
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <button id="theme-toggle" class="theme-toggle" aria-label="Cambia tema">
+                        <span class="theme-toggle-icon">🌙</span>
+                    </button>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">
+                            <span>{{ message }}</span>
+                            <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 Gestione Manutenzione Mezzi - Applicazione locale</p>
+            <div class="footer-actions">
+                <a href="{{ url_for('backup_database') }}" class="btn btn-sm">📥 Backup DB</a>
+                <a href="{{ url_for('export_veicoli') }}" class="btn btn-sm">📊 Export Veicoli</a>
+                <a href="{{ url_for('export_manutenzioni') }}" class="btn btn-sm">📊 Export Manutenzioni</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

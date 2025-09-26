@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Nuovo Veicolo - Gestione Manutenzione Mezzi{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Aggiungi nuovo veicolo</h1>
+    <p class="page-subtitle">Registra un nuovo mezzo per tenere traccia delle manutenzioni</p>
+</div>
+
+<div class="form-container">
+    <form method="POST" class="vehicle-form">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="nome" class="form-label">Nome/Modello *</label>
+                <input type="text" id="nome" name="nome" class="form-input" required
+                       placeholder="es. Honda CBR 600RR, Toyota Yaris">
+                <small class="help-text">Inserisci il nome o modello del veicolo</small>
+            </div>
+
+            <div class="form-group">
+                <label for="tipo" class="form-label">Tipo di veicolo *</label>
+                <select id="tipo" name="tipo" class="form-select" required>
+                    <option value="">Seleziona il tipo</option>
+                    {% for tipo in tipi_veicoli %}
+                    <option value="{{ tipo }}">{{ tipo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="anno" class="form-label">Anno di produzione</label>
+                <input type="number" id="anno" name="anno" class="form-input"
+                       min="1900" max="{{ current_year }}"
+                       placeholder="es. 2020">
+                <small class="help-text">Anno di immatricolazione o produzione</small>
+            </div>
+
+            <div class="form-group">
+                <label for="km_attuali" class="form-label">Chilometraggio attuale</label>
+                <input type="number" id="km_attuali" name="km_attuali" class="form-input"
+                       min="0" step="1" value="0"
+                       placeholder="es. 15000">
+                <small class="help-text">Chilometraggio attuale del veicolo</small>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="note" class="form-label">Note aggiuntive</label>
+            <textarea id="note" name="note" class="form-textarea" rows="4"
+                      placeholder="Note personali, condizioni, caratteristiche particolari..."></textarea>
+            <small class="help-text">Informazioni aggiuntive sul veicolo (opzionale)</small>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('lista_veicoli') }}" class="btn btn-secondary">Annulla</a>
+            <button type="submit" class="btn btn-primary">💾 Salva veicolo</button>
+        </div>
+    </form>
+</div>
+
+<div class="tips-section">
+    <h3>💡 Suggerimenti</h3>
+    <div class="tips-grid">
+        <div class="tip-card">
+            <div class="tip-icon">📝</div>
+            <h4>Nome descrittivo</h4>
+            <p>Usa un nome che ti permetta di identificare facilmente il veicolo, includendo marca e modello.</p>
+        </div>
+        <div class="tip-card">
+            <div class="tip-icon">🛣️</div>
+            <h4>Chilometraggio preciso</h4>
+            <p>Inserisci il chilometraggio attuale per tenere traccia accurata degli intervalli di manutenzione.</p>
+        </div>
+        <div class="tip-card">
+            <div class="tip-icon">📋</div>
+            <h4>Note utili</h4>
+            <p>Aggiungi informazioni come numero di targa, colore, o caratteristiche specifiche nelle note.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Imposta l'anno corrente come massimo
+document.getElementById('anno').max = new Date().getFullYear();
+
+// Validazione form lato client
+document.querySelector('.vehicle-form').addEventListener('submit', function(e) {
+    const nome = document.getElementById('nome').value.trim();
+    const tipo = document.getElementById('tipo').value;
+    const anno = document.getElementById('anno').value;
+    const km = document.getElementById('km_attuali').value;
+
+    if (!nome) {
+        e.preventDefault();
+        mostraErrore('Il nome del veicolo è obbligatorio');
+        document.getElementById('nome').focus();
+        return;
+    }
+
+    if (!tipo) {
+        e.preventDefault();
+        mostraErrore('Seleziona il tipo di veicolo');
+        document.getElementById('tipo').focus();
+        return;
+    }
+
+    if (anno && (anno < 1900 || anno > new Date().getFullYear())) {
+        e.preventDefault();
+        mostraErrore('Anno non valido');
+        document.getElementById('anno').focus();
+        return;
+    }
+
+    if (km && km < 0) {
+        e.preventDefault();
+        mostraErrore('Il chilometraggio non può essere negativo');
+        document.getElementById('km_attuali').focus();
+        return;
+    }
+});
+
+function mostraErrore(messaggio) {
+    // Rimuovi messaggi di errore esistenti
+    const esistenti = document.querySelectorAll('.form-error');
+    esistenti.forEach(el => el.remove());
+
+    // Crea nuovo messaggio di errore
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'form-error';
+    errorDiv.textContent = messaggio;
+
+    // Inserisci all'inizio del form
+    const form = document.querySelector('.vehicle-form');
+    form.insertBefore(errorDiv, form.firstChild);
+
+    // Scroll verso l'errore
+    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Rimuovi dopo 5 secondi
+    setTimeout(() => {
+        if (errorDiv.parentElement) {
+            errorDiv.remove();
+        }
+    }, 5000);
+}
+
+// Auto-focus sul primo campo
+document.getElementById('nome').focus();
+
+// Formattazione automatica del chilometraggio
+document.getElementById('km_attuali').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/[^\d]/g, '');
+    if (value) {
+        // Aggiungi separatori delle migliaia durante la digitazione (opzionale)
+        e.target.value = value;
+    }
+});
+</script>
+{% endblock %}

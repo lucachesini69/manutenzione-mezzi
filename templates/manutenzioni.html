@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}Manutenzioni - Gestione Manutenzione Mezzi{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Tutte le manutenzioni</h1>
+    <div class="page-actions">
+        <a href="{{ url_for('nuova_manutenzione') }}" class="btn btn-primary">🔧 Nuova manutenzione</a>
+    </div>
+</div>
+
+<div class="filters-section">
+    <div class="filters-container">
+        <div class="filter-group">
+            <label for="filterVeicolo">Filtra per veicolo:</label>
+            <select id="filterVeicolo" class="form-select">
+                <option value="">Tutti i veicoli</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="filterTipo">Filtra per tipo:</label>
+            <select id="filterTipo" class="form-select">
+                <option value="">Tutti i tipi</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="searchDescrizione">Cerca nella descrizione:</label>
+            <input type="text" id="searchDescrizione" class="form-input" placeholder="Cerca...">
+        </div>
+        <div class="filter-actions">
+            <button onclick="resetFiltri()" class="btn btn-secondary">Pulisci filtri</button>
+        </div>
+    </div>
+</div>
+
+{% if manutenzioni %}
+    <div class="maintenance-summary">
+        <div class="summary-stats">
+            <span class="summary-item">
+                <strong>{{ manutenzioni|length }}</strong> manutenzioni totali
+            </span>
+            <span class="summary-item">
+                <strong id="costoTotale">€ 0.00</strong> spesa totale
+            </span>
+            <span class="summary-item">
+                <strong id="manutenzioniVisibili">{{ manutenzioni|length }}</strong> visualizzate
+            </span>
+        </div>
+    </div>
+
+    <div class="maintenance-list" id="maintenanceList">
+        {% for manutenzione in manutenzioni %}
+        <div class="maintenance-item"
+             data-veicolo="{{ manutenzione.nome_veicolo|lower }}"
+             data-tipo="{{ manutenzione.tipo_manutenzione|lower }}"
+             data-descrizione="{{ (manutenzione.descrizione or '')|lower }}"
+             data-costo="{{ manutenzione.costo or 0 }}">
+
+            <div class="maintenance-content">
+                <div class="maintenance-main-info">
+                    <div class="maintenance-title">
+                        <h3>{{ manutenzione.tipo_manutenzione }}</h3>
+                        <span class="vehicle-badge">{{ manutenzione.nome_veicolo }}</span>
+                    </div>
+
+                    <div class="maintenance-meta">
+                        <span class="meta-item">
+                            <span class="meta-icon">📅</span>
+                            {{ manutenzione.data_intervento | format_date }}
+                        </span>
+                        <span class="meta-item">
+                            <span class="meta-icon">🛣️</span>
+                            {{ manutenzione.km_intervento | format_km }}
+                        </span>
+                        {% if manutenzione.costo %}
+                        <span class="meta-item cost">
+                            <span class="meta-icon">💰</span>
+                            {{ manutenzione.costo | format_currency }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if manutenzione.descrizione %}
+                <div class="maintenance-description">
+                    <p>{{ manutenzione.descrizione }}</p>
+                </div>
+                {% endif %}
+
+                {% if manutenzione.prossima_manutenzione_km or manutenzione.prossima_manutenzione_data %}
+                <div class="next-maintenance-info">
+                    <h4>Prossima manutenzione:</h4>
+                    <div class="next-maintenance-details">
+                        {% if manutenzione.prossima_manutenzione_data %}
+                            <span class="next-item">
+                                <span class="meta-icon">📅</span>
+                                {{ manutenzione.prossima_manutenzione_data | format_date }}
+                            </span>
+                        {% endif %}
+                        {% if manutenzione.prossima_manutenzione_km %}
+                            <span class="next-item">
+                                <span class="meta-icon">🛣️</span>
+                                {{ manutenzione.prossima_manutenzione_km | format_km }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="maintenance-actions">
+                <a href="{{ url_for('dettaglio_veicolo', veicolo_id=manutenzione.veicolo_id) }}" class="btn btn-sm">👁️ Veicolo</a>
+                <button class="btn btn-sm btn-danger" onclick="eliminaManutenzione({{ manutenzione.id }})">🗑️ Elimina</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="list-actions">
+        <div class="export-actions">
+            <a href="{{ url_for('export_manutenzioni') }}" class="btn btn-secondary">📊 Esporta CSV</a>
+            <button onclick="stampaLista()" class="btn btn-secondary">🖨️ Stampa</button>
+        </div>
+    </div>
+
+{% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🔧</div>
+        <h3>Nessuna manutenzione registrata</h3>
+        <p>Inizia registrando la prima manutenzione per i tuoi veicoli</p>
+        <a href="{{ url_for('nuova_manutenzione') }}" class="btn btn-primary">🔧 Prima manutenzione</a>
+    </div>
+{% endif %}
+
+<script>
+// Popola i filtri dinamicamente
+document.addEventListener('DOMContentLoaded', function() {
+    const manutenzioni = document.querySelectorAll('.maintenance-item');
+    const filterVeicolo = document.getElementById('filterVeicolo');
+    const filterTipo = document.getElementById('filterTipo');
+
+    // Raccogli veicoli e tipi unici
+    const veicoli = new Set();
+    const tipi = new Set();
+
+    manutenzioni.forEach(item => {
+        const veicolo = item.querySelector('.vehicle-badge').textContent;
+        const tipo = item.querySelector('.maintenance-title h3').textContent;
+        veicoli.add(veicolo);
+        tipi.add(tipo);
+    });
+
+    // Popola dropdown veicoli
+    [...veicoli].sort().forEach(veicolo => {
+        const option = document.createElement('option');
+        option.value = veicolo.toLowerCase();
+        option.textContent = veicolo;
+        filterVeicolo.appendChild(option);
+    });
+
+    // Popola dropdown tipi
+    [...tipi].sort().forEach(tipo => {
+        const option = document.createElement('option');
+        option.value = tipo.toLowerCase();
+        option.textContent = tipo;
+        filterTipo.appendChild(option);
+    });
+
+    // Calcola costo totale iniziale
+    calcolaCostoTotale();
+
+    // Aggiungi event listeners per i filtri
+    filterVeicolo.addEventListener('change', applicaFiltri);
+    filterTipo.addEventListener('change', applicaFiltri);
+    document.getElementById('searchDescrizione').addEventListener('input', applicaFiltri);
+});
+
+function applicaFiltri() {
+    const filterVeicolo = document.getElementById('filterVeicolo').value.toLowerCase();
+    const filterTipo = document.getElementById('filterTipo').value.toLowerCase();
+    const searchText = document.getElementById('searchDescrizione').value.toLowerCase();
+
+    const manutenzioni = document.querySelectorAll('.maintenance-item');
+    let visibili = 0;
+    let costoVisibile = 0;
+
+    manutenzioni.forEach(item => {
+        const veicoloMatch = !filterVeicolo || item.dataset.veicolo.includes(filterVeicolo);
+        const tipoMatch = !filterTipo || item.dataset.tipo.includes(filterTipo);
+        const descrizioneMatch = !searchText ||
+            item.dataset.descrizione.includes(searchText) ||
+            item.dataset.tipo.includes(searchText) ||
+            item.dataset.veicolo.includes(searchText);
+
+        const visible = veicoloMatch && tipoMatch && descrizioneMatch;
+
+        if (visible) {
+            item.style.display = 'flex';
+            visibili++;
+            costoVisibile += parseFloat(item.dataset.costo) || 0;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    // Aggiorna statistiche
+    document.getElementById('manutenzioniVisibili').textContent = visibili;
+    document.getElementById('costoTotale').textContent =
+        new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(costoVisibile);
+}
+
+function resetFiltri() {
+    document.getElementById('filterVeicolo').value = '';
+    document.getElementById('filterTipo').value = '';
+    document.getElementById('searchDescrizione').value = '';
+    applicaFiltri();
+}
+
+function calcolaCostoTotale() {
+    const manutenzioni = document.querySelectorAll('.maintenance-item');
+    let totale = 0;
+
+    manutenzioni.forEach(item => {
+        totale += parseFloat(item.dataset.costo) || 0;
+    });
+
+    document.getElementById('costoTotale').textContent =
+        new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(totale);
+}
+
+function eliminaManutenzione(manutenzioneId) {
+    if (confirm('Sei sicuro di voler eliminare questa manutenzione? L\'azione non può essere annullata.')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/manutenzioni/${manutenzioneId}/elimina`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function stampaLista() {
+    const filtriAttivi =
+        document.getElementById('filterVeicolo').value ||
+        document.getElementById('filterTipo').value ||
+        document.getElementById('searchDescrizione').value;
+
+    let titolo = 'Tutte le manutenzioni';
+    if (filtriAttivi) {
+        titolo = 'Manutenzioni filtrate';
+    }
+
+    // Apri nuova finestra per la stampa
+    const printWindow = window.open('', '', 'width=800,height=600');
+
+    // Raccogli solo gli elementi visibili
+    const manutenzioniVisibili = Array.from(document.querySelectorAll('.maintenance-item'))
+        .filter(item => item.style.display !== 'none');
+
+    let contenutoStampa = `
+        <html>
+        <head>
+            <title>${titolo}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                h1 { color: #333; border-bottom: 2px solid #333; padding-bottom: 10px; }
+                .maintenance-item { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; }
+                .maintenance-title { font-weight: bold; margin-bottom: 10px; }
+                .vehicle-badge { background: #f0f0f0; padding: 2px 8px; border-radius: 4px; font-size: 0.9em; }
+                .maintenance-meta { margin: 10px 0; }
+                .meta-item { margin-right: 15px; }
+                .maintenance-description { margin: 10px 0; font-style: italic; }
+                @media print { .no-print { display: none; } }
+            </style>
+        </head>
+        <body>
+            <h1>${titolo}</h1>
+            <p>Generato il: ${new Date().toLocaleDateString('it-IT')}</p>
+            <p>Numero manutenzioni: ${manutenzioniVisibili.length}</p>
+            <hr>
+    `;
+
+    manutenzioniVisibili.forEach(item => {
+        const contenuto = item.querySelector('.maintenance-content').innerHTML;
+        contenutoStampa += `<div class="maintenance-item">${contenuto}</div>`;
+    });
+
+    contenutoStampa += `
+            <script>
+                window.onload = function() {
+                    window.print();
+                    window.onafterprint = function() {
+                        window.close();
+                    }
+                }
+            </script>
+        </body>
+        </html>
+    `;
+
+    printWindow.document.write(contenutoStampa);
+    printWindow.document.close();
+}
+</script>
+{% endblock %}
