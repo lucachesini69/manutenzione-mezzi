@@ -4,7 +4,7 @@ import json
 import os
 from database import DatabaseManager
 from models import VeicoloService, ManutenzioneService, TIPI_MANUTENZIONE, TIPI_VEICOLI
-from email_backup import EmailBackup
+from local_sync_backup import LocalSyncBackup
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 
@@ -16,8 +16,8 @@ db_manager = DatabaseManager()
 veicolo_service = VeicoloService(db_manager)
 manutenzione_service = ManutenzioneService(db_manager)
 
-# Inizializza backup Email
-backup_service = EmailBackup()
+# Inizializza backup locale con sync
+backup_service = LocalSyncBackup()
 
 # Funzione di backup automatico
 def backup_automatico():
@@ -27,7 +27,7 @@ def backup_automatico():
         success = backup_service.backup_database()
         if success:
             print("✅ Backup automatico completato")
-        # Email backup non ha cleanup (ogni email è un backup)
+            backup_service.cleanup_old_backups(keep_count=10)
         else:
             print("❌ Backup automatico fallito")
     except Exception as e:
@@ -211,15 +211,16 @@ def backup_database():
         flash(f'Errore durante il backup: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
 
-@app.route('/backup-email')
-def backup_to_email():
-    """Esegue backup manuale via email"""
+@app.route('/backup-local')
+def backup_to_local():
+    """Esegue backup locale con sync automatico"""
     try:
         success = backup_service.backup_database()
         if success:
-            flash('✅ Backup inviato via email con successo!', 'success')
+            info = backup_service.get_backup_info()
+            flash(f'✅ Backup salvato in OneDrive! Cartella: {info["folder_path"]}', 'success')
         else:
-            flash('❌ Errore durante il backup email. Controlla le credenziali.', 'error')
+            flash('❌ Errore durante il backup locale.', 'error')
     except Exception as e:
         flash(f'❌ Errore durante il backup: {str(e)}', 'error')
     return redirect(url_for('dashboard'))
