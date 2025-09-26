@@ -4,6 +4,9 @@ import json
 import os
 from database import DatabaseManager
 from models import VeicoloService, ManutenzioneService, TIPI_MANUTENZIONE, TIPI_VEICOLI
+from google_drive_backup import GoogleDriveBackup
+from apscheduler.schedulers.background import BackgroundScheduler
+import atexit
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
@@ -12,6 +15,39 @@ app.secret_key = 'your-secret-key-here'
 db_manager = DatabaseManager()
 veicolo_service = VeicoloService(db_manager)
 manutenzione_service = ManutenzioneService(db_manager)
+
+# Inizializza backup Google Drive
+backup_service = GoogleDriveBackup()
+
+# Funzione di backup automatico
+def backup_automatico():
+    """Esegue il backup automatico del database"""
+    try:
+        print("🔄 Avvio backup automatico...")
+        success = backup_service.backup_database()
+        if success:
+            print("✅ Backup automatico completato")
+            backup_service.cleanup_old_backups(keep_count=10)
+        else:
+            print("❌ Backup automatico fallito")
+    except Exception as e:
+        print(f"❌ Errore durante backup automatico: {e}")
+
+# Configura scheduler per backup automatico
+scheduler = BackgroundScheduler()
+# Backup ogni giorno alle 2:00 AM
+scheduler.add_job(func=backup_automatico, trigger="cron", hour=2, minute=0, id='backup_job')
+
+# Avvia scheduler solo se non in debug mode
+if not os.environ.get('FLASK_ENV') == 'development':
+    try:
+        scheduler.start()
+        print("⏰ Scheduler backup automatico avviato (ogni giorno alle 2:00)")
+    except Exception as e:
+        print(f"Errore avvio scheduler: {e}")
+
+    # Ferma scheduler quando l'app si chiude
+    atexit.register(lambda: scheduler.shutdown())
 
 @app.route('/')
 def dashboard():
@@ -174,6 +210,19 @@ def backup_database():
     except Exception as e:
         flash(f'Errore durante il backup: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
+
+@app.route('/backup-drive')
+def backup_to_drive():
+    """Esegue backup manuale su Google Drive"""
+    try:
+        success = backup_service.backup_database()
+        if success:
+            flash('✅ Backup su Google Drive completato con successo!', 'success')
+        else:
+            flash('❌ Errore durante il backup su Google Drive. Controlla le credenziali.', 'error')
+    except Exception as e:
+        flash(f'❌ Errore durante il backup: {str(e)}', 'error')
+    return redirect(url_for('dashboard'))
 
 @app.route('/api/veicoli/<int:veicolo_id>/km', methods=['PUT'])
 def aggiorna_km_api(veicolo_id):
