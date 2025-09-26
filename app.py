@@ -42,12 +42,31 @@ scheduler.add_job(func=backup_automatico, trigger="cron", hour=2, minute=0, id='
 if not os.environ.get('FLASK_ENV') == 'development':
     try:
         scheduler.start()
-        print("⏰ Scheduler backup automatico avviato (ogni giorno alle 2:00)")
+        print("Scheduler backup automatico avviato (ogni giorno alle 2:00)")
     except Exception as e:
         print(f"Errore avvio scheduler: {e}")
 
     # Ferma scheduler quando l'app si chiude
     atexit.register(lambda: scheduler.shutdown())
+
+# Funzione per convertire decimali italiani
+def converti_decimale(valore_str):
+    """Converte stringhe con virgola o punto in float"""
+    if not valore_str:
+        return None
+
+    # Rimuove spazi
+    valore_str = str(valore_str).strip()
+
+    if not valore_str:
+        return None
+
+    try:
+        # Sostituisce virgola con punto
+        valore_str = valore_str.replace(',', '.')
+        return float(valore_str)
+    except ValueError:
+        return None
 
 @app.route('/')
 def dashboard():
@@ -149,7 +168,7 @@ def nuova_manutenzione():
         try:
             veicolo_id = int(veicolo_id)
             km_intervento = int(km_intervento)
-            costo = float(costo) if costo else None
+            costo = converti_decimale(costo)
             prossima_manutenzione_km = int(prossima_manutenzione_km) if prossima_manutenzione_km else None
 
             if not prossima_manutenzione_data:
