@@ -1484,6 +1484,40 @@ body {
         font-size: 0.85rem !important;
         margin-bottom: 1rem;
     }
+
+    /* Fix mobile form inputs */
+    .form-input,
+    .form-select,
+    .form-textarea {
+        font-size: 16px !important; /* Prevent zoom on iOS */
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        pointer-events: auto !important;
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        touch-action: manipulation;
+        min-height: 44px;
+        padding: 0.75rem;
+        border-radius: 8px;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+        outline: 2px solid var(--primary-color) !important;
+        outline-offset: -2px;
+        border-color: var(--primary-color) !important;
+    }
+
+    .form-select {
+        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23666' d='m8 10.293 3.146-3.147.708.708L8 11.707l-3.854-3.853.708-.708z'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 0.75rem center !important;
+        background-size: 12px !important;
+        padding-right: 2.5rem !important;
+    }
 }
 
 /* Animazioni */
