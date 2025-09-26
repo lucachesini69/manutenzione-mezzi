@@ -1321,6 +1321,80 @@ body {
         grid-template-columns: 1fr;
     }
 
+    /* Navbar mobile improvements */
+    .nav-brand {
+        flex: 1;
+    }
+
+    .nav-brand a {
+        font-size: 0.9rem !important;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+    }
+
+    .nav-menu {
+        background: var(--background-color);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        top: 65px;
+        left: 1rem;
+        right: 1rem;
+        width: auto;
+        padding: 1rem;
+    }
+
+    .nav-menu.active {
+        display: block;
+    }
+
+    .nav-item {
+        margin: 0;
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.75rem 0;
+    }
+
+    .nav-item:last-child {
+        border-bottom: none;
+    }
+
+    .nav-link {
+        font-size: 1rem !important;
+        font-weight: 500;
+        padding: 0.5rem 0;
+        display: block;
+        color: var(--text-color);
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+        color: var(--primary-color);
+        background: none;
+    }
+
+    .theme-toggle {
+        padding: 0.5rem;
+        margin-top: 0.25rem;
+    }
+
+    .hamburger {
+        padding: 0.5rem;
+        margin-right: 0.5rem;
+    }
+
+    .hamburger .bar {
+        width: 20px;
+        height: 2px;
+        background: var(--text-color);
+        margin: 4px 0;
+        transition: 0.3s;
+    }
+
     /* Dashboard mobile improvements */
     .page-header h1 {
         font-size: 1.8rem !important;
