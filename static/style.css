@@ -1111,6 +1111,35 @@ body {
     gap: 1rem;
 }
 
+/* Hamburger menu per mobile */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.hamburger .bar {
+    width: 25px;
+    height: 3px;
+    background-color: var(--text-primary);
+    margin: 3px 0;
+    transition: 0.3s;
+    border-radius: 2px;
+}
+
+.hamburger.active .bar:nth-child(1) {
+    transform: rotate(-45deg) translate(-5px, 6px);
+}
+
+.hamburger.active .bar:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger.active .bar:nth-child(3) {
+    transform: rotate(45deg) translate(-5px, -6px);
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .main-content {
@@ -1122,7 +1151,6 @@ body {
     }
 
     .nav-menu {
-        display: none;
         position: fixed;
         left: -100%;
         top: 70px;
@@ -1130,17 +1158,34 @@ body {
         background-color: var(--surface);
         width: 100%;
         text-align: center;
-        transition: 0.3s;
+        transition: left 0.3s ease;
         box-shadow: var(--shadow-lg);
         padding: 2rem 0;
+        border-top: 1px solid var(--border);
+        z-index: 99;
     }
 
     .nav-menu.active {
         left: 0;
+        display: flex;
     }
 
     .nav-menu li {
         margin: 1rem 0;
+        width: 100%;
+    }
+
+    .nav-link {
+        display: block;
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+        background-color: var(--primary-color);
+        color: white;
     }
 
     .hamburger {
@@ -1165,7 +1210,8 @@ body {
     }
 
     .page-title-section h1 {
-        font-size: 2rem;
+        font-size: 1.8rem;
+        line-height: 1.2;
     }
 
     .dashboard-grid {
@@ -1240,8 +1286,23 @@ body {
     }
 
     .btn {
-        padding: 0.625rem 1rem;
-        font-size: 0.875rem;
+        padding: 0.8rem 1rem;
+        font-size: 0.9rem;
+        min-height: 44px;
+        width: 100%;
+    }
+
+    /* Migliori action buttons per mobile */
+    .maintenance-actions,
+    .vehicle-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .maintenance-actions .btn,
+    .vehicle-actions .btn {
+        width: 100%;
+        justify-content: center;
     }
 
     .card {
