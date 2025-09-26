@@ -193,6 +193,60 @@ def nuova_manutenzione():
                          tipi_manutenzione=TIPI_MANUTENZIONE,
                          veicolo_id_preselezionato=veicolo_id)
 
+@app.route('/manutenzioni/<int:manutenzione_id>/modifica', methods=['GET', 'POST'])
+def modifica_manutenzione(manutenzione_id):
+    """Modifica una manutenzione esistente"""
+    manutenzione = manutenzione_service.get_manutenzione_by_id(manutenzione_id)
+
+    if not manutenzione:
+        flash('Manutenzione non trovata', 'error')
+        return redirect(url_for('lista_manutenzioni'))
+
+    if request.method == 'POST':
+        veicolo_id = request.form.get('veicolo_id')
+        data_intervento = request.form.get('data_intervento')
+        km_intervento = request.form.get('km_intervento')
+        tipo_manutenzione = request.form.get('tipo_manutenzione')
+        descrizione = request.form.get('descrizione')
+        costo = request.form.get('costo')
+        prossima_manutenzione_km = request.form.get('prossima_manutenzione_km')
+        prossima_manutenzione_data = request.form.get('prossima_manutenzione_data')
+
+        if not all([veicolo_id, data_intervento, km_intervento, tipo_manutenzione]):
+            flash('Tutti i campi obbligatori devono essere compilati', 'error')
+            return redirect(url_for('modifica_manutenzione', manutenzione_id=manutenzione_id))
+
+        try:
+            veicolo_id = int(veicolo_id)
+            km_intervento = int(km_intervento)
+            costo = converti_decimale(costo)
+            prossima_manutenzione_km = int(prossima_manutenzione_km) if prossima_manutenzione_km else None
+
+            if not prossima_manutenzione_data:
+                prossima_manutenzione_data = None
+
+            success = manutenzione_service.aggiorna_manutenzione(
+                manutenzione_id, veicolo_id, data_intervento, km_intervento,
+                tipo_manutenzione, descrizione, costo, prossima_manutenzione_km,
+                prossima_manutenzione_data
+            )
+
+            if success:
+                flash('Manutenzione aggiornata con successo', 'success')
+                return redirect(url_for('dettaglio_veicolo', veicolo_id=veicolo_id))
+            else:
+                flash('Errore durante l\'aggiornamento della manutenzione', 'error')
+
+        except ValueError as e:
+            flash('Errore nei dati inseriti: valori numerici non validi', 'error')
+            return redirect(url_for('modifica_manutenzione', manutenzione_id=manutenzione_id))
+
+    veicoli = veicolo_service.get_tutti_veicoli()
+    return render_template('modifica_manutenzione.html',
+                         manutenzione=manutenzione,
+                         veicoli=veicoli,
+                         tipi_manutenzione=TIPI_MANUTENZIONE)
+
 @app.route('/manutenzioni/<int:manutenzione_id>/elimina', methods=['POST'])
 def elimina_manutenzione(manutenzione_id):
     manutenzione_service.elimina_manutenzione(manutenzione_id)

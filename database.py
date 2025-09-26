@@ -158,6 +158,39 @@ class DatabaseManager:
             ''', (veicolo_id,))
             return cursor.fetchone()
 
+    def get_manutenzione_by_id(self, manutenzione_id):
+        """Ottiene una manutenzione per ID"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT * FROM manutenzioni WHERE id = ?
+            ''', (manutenzione_id,))
+            return cursor.fetchone()
+
+    def aggiorna_manutenzione(self, manutenzione_id, veicolo_id, data_intervento,
+                            km_intervento, tipo_manutenzione, descrizione=None,
+                            costo=None, prossima_manutenzione_km=None,
+                            prossima_manutenzione_data=None):
+        """Aggiorna una manutenzione esistente"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE manutenzioni SET
+                    veicolo_id = ?,
+                    data_intervento = ?,
+                    km_intervento = ?,
+                    tipo_manutenzione = ?,
+                    descrizione = ?,
+                    costo = ?,
+                    prossima_manutenzione_km = ?,
+                    prossima_manutenzione_data = ?
+                WHERE id = ?
+            ''', (veicolo_id, data_intervento, km_intervento, tipo_manutenzione,
+                  descrizione, costo, prossima_manutenzione_km,
+                  prossima_manutenzione_data, manutenzione_id))
+            return cursor.rowcount > 0
+
     def backup_database(self, backup_path):
         import shutil
         shutil.copy2(self.db_path, backup_path)

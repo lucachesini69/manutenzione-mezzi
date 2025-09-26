@@ -152,6 +152,24 @@ class ManutenzioneService:
                 prossime.append(manutenzione)
         return prossime
 
+    def get_manutenzione_by_id(self, manutenzione_id):
+        """Ottiene una manutenzione per ID"""
+        row = self.db.get_manutenzione_by_id(manutenzione_id)
+        if row:
+            return Manutenzione(*row)
+        return None
+
+    def aggiorna_manutenzione(self, manutenzione_id, veicolo_id, data_intervento,
+                            km_intervento, tipo_manutenzione, descrizione=None,
+                            costo=None, prossima_manutenzione_km=None,
+                            prossima_manutenzione_data=None):
+        """Aggiorna una manutenzione esistente"""
+        return self.db.aggiorna_manutenzione(
+            manutenzione_id, veicolo_id, data_intervento, km_intervento,
+            tipo_manutenzione, descrizione, costo,
+            prossima_manutenzione_km, prossima_manutenzione_data
+        )
+
     def elimina_manutenzione(self, manutenzione_id):
         return self.db.elimina_manutenzione(manutenzione_id)
 

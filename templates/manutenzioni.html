@@ -111,6 +111,7 @@
 
             <div class="maintenance-actions">
                 <a href="{{ url_for('dettaglio_veicolo', veicolo_id=manutenzione.veicolo_id) }}" class="btn btn-sm">👁️ Veicolo</a>
+                <a href="{{ url_for('modifica_manutenzione', manutenzione_id=manutenzione.id) }}" class="btn btn-sm btn-outline">✏️ Modifica</a>
                 <button class="btn btn-sm btn-danger" onclick="eliminaManutenzione({{ manutenzione.id }})">🗑️ Elimina</button>
             </div>
         </div>

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Modifica Manutenzione - Gestione Manutenzione Mezzi{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Modifica manutenzione</h1>
+    <p class="page-subtitle">Aggiorna i dati dell'intervento di manutenzione</p>
+</div>
+
+<div class="form-container">
+    <form method="POST" class="maintenance-form">
+        <div class="form-section">
+            <h2>Informazioni di base</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="veicolo_id" class="form-label">Veicolo *</label>
+                    <select id="veicolo_id" name="veicolo_id" class="form-select" required>
+                        <option value="">Seleziona il veicolo</option>
+                        {% for veicolo in veicoli %}
+                        <option value="{{ veicolo.id }}"
+                                {% if veicolo.id == manutenzione.veicolo_id %}selected{% endif %}
+                                data-km="{{ veicolo.km_attuali }}">
+                            {{ veicolo.nome }} ({{ veicolo.tipo }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="data_intervento" class="form-label">Data intervento *</label>
+                    <input type="date" id="data_intervento" name="data_intervento"
+                           value="{{ manutenzione.data_intervento }}" class="form-input" required>
+                    <small class="help-text">Data in cui è stata eseguita la manutenzione</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="km_intervento" class="form-label">Chilometraggio *</label>
+                    <input type="number" id="km_intervento" name="km_intervento"
+                           value="{{ manutenzione.km_intervento }}" class="form-input"
+                           min="0" step="1" required placeholder="es. 15000">
+                    <small class="help-text">Chilometraggio al momento dell'intervento</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="tipo_manutenzione" class="form-label">Tipo di manutenzione *</label>
+                    <select id="tipo_manutenzione" name="tipo_manutenzione" class="form-select" required>
+                        <option value="">Seleziona il tipo</option>
+                        {% for tipo in tipi_manutenzione %}
+                        <option value="{{ tipo }}" {% if tipo == manutenzione.tipo_manutenzione %}selected{% endif %}>{{ tipo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Dettagli aggiuntivi</h2>
+            <div class="form-group">
+                <label for="descrizione" class="form-label">Descrizione dettagliata</label>
+                <textarea id="descrizione" name="descrizione" class="form-textarea" rows="4"
+                          placeholder="Descrivi nel dettaglio l'intervento eseguito, parti sostituite, problemi risolti...">{{ manutenzione.descrizione or '' }}</textarea>
+                <small class="help-text">Informazioni dettagliate sull'intervento (opzionale)</small>
+            </div>
+
+            <div class="form-group">
+                <label for="costo" class="form-label">Costo (€)</label>
+                <input type="text" id="costo" name="costo"
+                       value="{% if manutenzione.costo %}{{ '%.2f'|format(manutenzione.costo)|replace('.', ',') }}{% endif %}"
+                       class="form-input" placeholder="es. 45,50 oppure 45.50">
+                <small class="help-text">Costo totale dell'intervento - accetta sia 45,50 che 45.50 (opzionale)</small>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Programmazione prossima manutenzione</h2>
+            <p class="section-description">Imposta quando dovrebbe essere eseguita la prossima manutenzione di questo tipo</p>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="prossima_manutenzione_km" class="form-label">Prossimi chilometri</label>
+                    <input type="number" id="prossima_manutenzione_km" name="prossima_manutenzione_km"
+                           value="{{ manutenzione.prossima_manutenzione_km or '' }}"
+                           class="form-input" min="0" step="1" placeholder="es. 20000">
+                    <small class="help-text">Chilometraggio per la prossima manutenzione</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="prossima_manutenzione_data" class="form-label">Prossima data</label>
+                    <input type="date" id="prossima_manutenzione_data" name="prossima_manutenzione_data"
+                           value="{{ manutenzione.prossima_manutenzione_data or '' }}" class="form-input">
+                    <small class="help-text">Data prevista per la prossima manutenzione</small>
+                </div>
+            </div>
+
+            <div class="quick-intervals">
+                <h4>Intervalli comuni:</h4>
+                <div class="interval-buttons">
+                    <button type="button" class="btn btn-sm btn-outline" onclick="aggiungiIntervallo(5000)">+5.000 km</button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="aggiungiIntervallo(10000)">+10.000 km</button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="aggiungiIntervallo(15000)">+15.000 km</button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="aggiungiData(6)">+6 mesi</button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="aggiungiData(12)">+1 anno</button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="aggiungiData(24)">+2 anni</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('dettaglio_veicolo', veicolo_id=manutenzione.veicolo_id) }}" class="btn btn-secondary">Annulla</a>
+            <button type="submit" class="btn btn-primary">💾 Salva modifiche</button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Funzioni per gli intervalli rapidi
+function aggiungiIntervallo(km) {
+    const kmInterventoInput = document.getElementById('km_intervento');
+    const prossimaKmInput = document.getElementById('prossima_manutenzione_km');
+
+    if (kmInterventoInput.value) {
+        const kmAttuali = parseInt(kmInterventoInput.value);
+        prossimaKmInput.value = kmAttuali + km;
+    }
+}
+
+function aggiungiData(mesi) {
+    const dataInterventoInput = document.getElementById('data_intervento');
+    const prossimaDataInput = document.getElementById('prossima_manutenzione_data');
+
+    if (dataInterventoInput.value) {
+        const dataIntervento = new Date(dataInterventoInput.value);
+        dataIntervento.setMonth(dataIntervento.getMonth() + mesi);
+        prossimaDataInput.value = dataIntervento.toISOString().split('T')[0];
+    }
+}
+
+// Supporto per decimali italiani - la conversione avviene lato server
+
+// Auto-focus sul primo campo
+document.getElementById('data_intervento').focus();
+</script>
+{% endblock %}
