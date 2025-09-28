@@ -1,0 +1,82 @@
+/* MOBILE FIX - FORZA NASCONDERE TUTTO */
+@media (max-width: 768px) {
+    /* NASCONDE COMPLETAMENTE IL MENU SU MOBILE */
+    .nav-menu {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        position: absolute !important;
+        left: -9999px !important;
+        top: -9999px !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        z-index: -1 !important;
+    }
+
+    /* NASCONDE ANCHE TUTTI I LINK */
+    .nav-menu * {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* NASCONDE HAMBURGER */
+    .hamburger,
+    .menu-toggle {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* ASSICURA CHE IL MAIN CONTENT SIA SEMPRE VISIBILE */
+    .main-content {
+        display: block !important;
+        visibility: visible !important;
+        position: relative !important;
+        z-index: 1 !important;
+        background: var(--background) !important;
+    }
+
+    /* NAVIGAZIONE MOBILE ALTERNATIVA */
+    .mobile-nav {
+        display: flex !important;
+        justify-content: space-around !important;
+        background: var(--surface) !important;
+        border-top: 1px solid var(--border) !important;
+        padding: 1rem !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1000 !important;
+    }
+
+    .mobile-nav-link {
+        text-decoration: none !important;
+        color: var(--text-primary) !important;
+        font-size: 0.9rem !important;
+        text-align: center !important;
+        padding: 0.5rem !important;
+        border-radius: var(--radius) !important;
+        background: var(--background) !important;
+        border: 1px solid var(--border) !important;
+        min-width: 70px !important;
+    }
+
+    .mobile-nav-link:hover,
+    .mobile-nav-link:active {
+        background: var(--primary-color) !important;
+        color: white !important;
+    }
+
+    /* Aggiungi padding al body per la nav fissa */
+    body {
+        padding-bottom: 80px !important;
+    }
+}
+
+/* NASCONDI NAVIGAZIONE MOBILE SU DESKTOP */
+@media (min-width: 769px) {
+    .mobile-nav {
+        display: none !important;
+    }
+}

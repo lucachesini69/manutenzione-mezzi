@@ -37,33 +37,28 @@ function applyTheme(theme) {
 
 // === GESTIONE NAVIGAZIONE MOBILE ===
 function initializeNavigation() {
-    const hamburger = document.querySelector('.hamburger');
-    const navMenu = document.querySelector('.nav-menu');
+    const menuToggle = document.getElementById('menu-toggle');
+    const navLinks = document.querySelectorAll('.nav-link');
 
-    if (!hamburger || !navMenu) return;
-
-    hamburger.addEventListener('click', function() {
-        hamburger.classList.toggle('active');
-        navMenu.classList.toggle('active');
-    });
+    if (!menuToggle) return;
 
     // Chiudi menu quando si clicca su un link
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', function() {
-            hamburger.classList.remove('active');
-            navMenu.classList.remove('active');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            alert('Link cliccato! Chiudo il menu');
+            console.log('Nav link clicked, closing menu');
+            menuToggle.checked = false;
+            // Forza refresh dopo un attimo
+            setTimeout(() => {
+                window.location.href = this.href;
+            }, 200);
+            e.preventDefault();
         });
     });
 
-    // Chiudi menu quando si clicca fuori
-    document.addEventListener('click', function(event) {
-        const isClickInsideNav = navMenu.contains(event.target);
-        const isClickOnHamburger = hamburger.contains(event.target);
-
-        if (!isClickInsideNav && !isClickOnHamburger && navMenu.classList.contains('active')) {
-            hamburger.classList.remove('active');
-            navMenu.classList.remove('active');
-        }
+    // Debug: log quando il menu viene aperto/chiuso
+    menuToggle.addEventListener('change', function() {
+        console.log('Menu toggle changed:', this.checked ? 'opened' : 'closed');
     });
 }
 

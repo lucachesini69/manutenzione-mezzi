@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(findstr:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(copy:*)"
     ],
     "deny": [],
     "ask": []

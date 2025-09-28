@@ -33,21 +33,21 @@ def backup_automatico():
     except Exception as e:
         print(f"❌ Errore durante backup automatico: {e}")
 
-# Configura scheduler per backup automatico
-scheduler = BackgroundScheduler()
-# Backup ogni giorno alle 2:00 AM
-scheduler.add_job(func=backup_automatico, trigger="cron", hour=2, minute=0, id='backup_job')
+# Configura scheduler per backup automatico (inizializzazione lazy)
+scheduler = None
 
-# Avvia scheduler solo se non in debug mode
-if not os.environ.get('FLASK_ENV') == 'development':
-    try:
-        scheduler.start()
-        print("Scheduler backup automatico avviato (ogni giorno alle 2:00)")
-    except Exception as e:
-        print(f"Errore avvio scheduler: {e}")
-
-    # Ferma scheduler quando l'app si chiude
-    atexit.register(lambda: scheduler.shutdown())
+def init_scheduler():
+    """Inizializza scheduler in modo lazy"""
+    global scheduler
+    if scheduler is None and not os.environ.get('FLASK_ENV') == 'development':
+        try:
+            scheduler = BackgroundScheduler()
+            scheduler.add_job(func=backup_automatico, trigger="cron", hour=2, minute=0, id='backup_job')
+            scheduler.start()
+            print("Scheduler backup automatico avviato (ogni giorno alle 2:00)")
+            atexit.register(lambda: scheduler.shutdown())
+        except Exception as e:
+            print(f"Errore avvio scheduler: {e}")
 
 # Funzione per convertire decimali italiani
 def converti_decimale(valore_str):
@@ -68,8 +68,20 @@ def converti_decimale(valore_str):
     except ValueError:
         return None
 
+@app.route('/health')
+def health_check():
+    """Endpoint per verificare lo stato dell'app"""
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.now().isoformat(),
+        'version': '1.0'
+    }), 200
+
 @app.route('/')
 def dashboard():
+    # Inizializza scheduler al primo accesso (lazy loading)
+    init_scheduler()
+
     veicoli = veicolo_service.get_tutti_veicoli()
     prossime_manutenzioni = manutenzione_service.get_prossime_manutenzioni()
     ultime_manutenzioni = manutenzione_service.get_tutte_manutenzioni()[:5]

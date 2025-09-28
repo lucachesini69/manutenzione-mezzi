@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}Gestione Manutenzione Mezzi{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style-new.css') }}">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
 </head>
 <body>
@@ -13,6 +13,7 @@
             <div class="nav-brand">
                 <a href="{{ url_for('dashboard') }}">🔧 Manutenzione Mezzi</a>
             </div>
+
             <ul class="nav-menu">
                 <li class="nav-item">
                     <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
@@ -35,11 +36,6 @@
                     </button>
                 </li>
             </ul>
-            <div class="hamburger">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-            </div>
         </div>
     </nav>
 
@@ -59,6 +55,7 @@
 
         {% block content %}{% endblock %}
     </main>
+
 
     <footer class="footer">
         <div class="footer-content">
