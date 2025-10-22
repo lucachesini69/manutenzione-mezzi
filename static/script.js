@@ -44,21 +44,9 @@ function initializeNavigation() {
 
     // Chiudi menu quando si clicca su un link
     navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            alert('Link cliccato! Chiudo il menu');
-            console.log('Nav link clicked, closing menu');
+        link.addEventListener('click', function() {
             menuToggle.checked = false;
-            // Forza refresh dopo un attimo
-            setTimeout(() => {
-                window.location.href = this.href;
-            }, 200);
-            e.preventDefault();
         });
-    });
-
-    // Debug: log quando il menu viene aperto/chiuso
-    menuToggle.addEventListener('change', function() {
-        console.log('Menu toggle changed:', this.checked ? 'opened' : 'closed');
     });
 }
 

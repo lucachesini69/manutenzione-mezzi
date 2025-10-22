@@ -2,14 +2,20 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from datetime import datetime, date
 import json
 import os
+import secrets
 from database import DatabaseManager
 from models import VeicoloService, ManutenzioneService, TIPI_MANUTENZIONE, TIPI_VEICOLI
 from local_sync_backup import LocalSyncBackup
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
+from logger import get_logger
+
+# Inizializza logger
+logger = get_logger(__name__)
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'
+# Usa SECRET_KEY da variabile ambiente, oppure genera una chiave random per sviluppo
+app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 
 # Inizializza il database
 db_manager = DatabaseManager()
@@ -23,15 +29,15 @@ backup_service = LocalSyncBackup()
 def backup_automatico():
     """Esegue il backup automatico del database"""
     try:
-        print("🔄 Avvio backup automatico...")
+        logger.info("🔄 Avvio backup automatico...")
         success = backup_service.backup_database()
         if success:
-            print("✅ Backup automatico completato")
+            logger.info("✅ Backup automatico completato")
             backup_service.cleanup_old_backups(keep_count=10)
         else:
-            print("❌ Backup automatico fallito")
+            logger.error("❌ Backup automatico fallito")
     except Exception as e:
-        print(f"❌ Errore durante backup automatico: {e}")
+        logger.error(f"❌ Errore durante backup automatico: {e}")
 
 # Configura scheduler per backup automatico (inizializzazione lazy)
 scheduler = None
@@ -44,10 +50,10 @@ def init_scheduler():
             scheduler = BackgroundScheduler()
             scheduler.add_job(func=backup_automatico, trigger="cron", hour=2, minute=0, id='backup_job')
             scheduler.start()
-            print("Scheduler backup automatico avviato (ogni giorno alle 2:00)")
+            logger.info("Scheduler backup automatico avviato (ogni giorno alle 2:00)")
             atexit.register(lambda: scheduler.shutdown())
         except Exception as e:
-            print(f"Errore avvio scheduler: {e}")
+            logger.error(f"Errore avvio scheduler: {e}")
 
 # Funzione per convertire decimali italiani
 def converti_decimale(valore_str):
@@ -372,7 +378,7 @@ def internal_server_error(e):
 
 # Inizializza dati di esempio al primo avvio
 if not os.path.exists('manutenzione.db') or os.path.getsize('manutenzione.db') == 0:
-    print("Creazione dati di esempio...")
+    logger.info("Creazione dati di esempio...")
 
     # Veicoli di esempio
     veicolo1_id = veicolo_service.crea_veicolo(
@@ -396,7 +402,7 @@ if not os.path.exists('manutenzione.db') or os.path.getsize('manutenzione.db') =
         "Tagliando completo presso officina autorizzata", 280.00, 44000, "2025-02-10"
     )
 
-    print("Dati di esempio creati!")
+    logger.info("Dati di esempio creati!")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))

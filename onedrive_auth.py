@@ -1,8 +1,15 @@
 from msal import PublicClientApplication
 import json
+import os
 
-# Le tue credenziali
-CLIENT_ID = "a119a8e9-6907-4e2c-af70-ac44edfddc5e"
+# Credenziali da variabili ambiente
+CLIENT_ID = os.environ.get('ONEDRIVE_CLIENT_ID')
+
+if not CLIENT_ID:
+    print("ERRORE: ONEDRIVE_CLIENT_ID non impostato nelle variabili ambiente")
+    print("Imposta la variabile ambiente ONEDRIVE_CLIENT_ID con il tuo Client ID di Azure")
+    input("\nPremi INVIO per chiudere...")
+    exit(1)
 
 print("Autorizzazione OneDrive per Manutenzione Mezzi")
 print("=" * 50)

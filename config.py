@@ -90,8 +90,8 @@ LOG_LEVEL = 'INFO'
 LOG_FILE = 'app.log'
 
 # Configurazione sicurezza
-ENABLE_CSRF_PROTECTION = False  # Disabilitato per semplicità
-SECURE_HEADERS = False
+ENABLE_CSRF_PROTECTION = True  # Abilitato per sicurezza
+SECURE_HEADERS = True  # Abilitato per sicurezza
 
 # Configurazione performance
 CACHE_ENABLED = False

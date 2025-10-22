@@ -114,6 +114,52 @@
 </div>
 
 <script>
+// Validazione form
+document.querySelector('.maintenance-form').addEventListener('submit', function(e) {
+    const veicoloId = document.getElementById('veicolo_id').value;
+    const dataIntervento = document.getElementById('data_intervento').value;
+    const kmIntervento = document.getElementById('km_intervento').value;
+    const tipoManutenzione = document.getElementById('tipo_manutenzione').value;
+
+    if (!veicoloId) {
+        e.preventDefault();
+        mostraErrore('Seleziona un veicolo');
+        document.getElementById('veicolo_id').focus();
+        return;
+    }
+
+    if (!dataIntervento) {
+        e.preventDefault();
+        mostraErrore('Inserisci la data dell\'intervento');
+        document.getElementById('data_intervento').focus();
+        return;
+    }
+
+    if (!kmIntervento || kmIntervento < 0) {
+        e.preventDefault();
+        mostraErrore('Inserisci un chilometraggio valido');
+        document.getElementById('km_intervento').focus();
+        return;
+    }
+
+    if (!tipoManutenzione) {
+        e.preventDefault();
+        mostraErrore('Seleziona il tipo di manutenzione');
+        document.getElementById('tipo_manutenzione').focus();
+        return;
+    }
+
+    // Validazione data non futura
+    const oggi = new Date();
+    const dataInserita = new Date(dataIntervento);
+    if (dataInserita > oggi) {
+        e.preventDefault();
+        mostraErrore('La data dell\'intervento non può essere futura');
+        document.getElementById('data_intervento').focus();
+        return;
+    }
+});
+
 // Funzioni per gli intervalli rapidi
 function aggiungiIntervallo(km) {
     const kmInterventoInput = document.getElementById('km_intervento');
@@ -134,6 +180,31 @@ function aggiungiData(mesi) {
         dataIntervento.setMonth(dataIntervento.getMonth() + mesi);
         prossimaDataInput.value = dataIntervento.toISOString().split('T')[0];
     }
+}
+
+function mostraErrore(messaggio) {
+    // Rimuovi messaggi di errore esistenti
+    const esistenti = document.querySelectorAll('.form-error');
+    esistenti.forEach(el => el.remove());
+
+    // Crea nuovo messaggio di errore
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'form-error';
+    errorDiv.textContent = messaggio;
+
+    // Inserisci all'inizio del form
+    const form = document.querySelector('.maintenance-form');
+    form.insertBefore(errorDiv, form.firstChild);
+
+    // Scroll verso l'errore
+    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Rimuovi dopo 5 secondi
+    setTimeout(() => {
+        if (errorDiv.parentElement) {
+            errorDiv.remove();
+        }
+    }, 5000);
 }
 
 // Supporto per decimali italiani - la conversione avviene lato server
