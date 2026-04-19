@@ -2,6 +2,23 @@ from datetime import datetime, date
 from dataclasses import dataclass
 from typing import Optional
 
+
+def _as_date(value):
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    return datetime.strptime(value, '%Y-%m-%d').date()
+
+
+def _as_datetime(value):
+    if value is None or isinstance(value, datetime):
+        return value
+    return datetime.fromisoformat(str(value))
+
+
 @dataclass
 class Veicolo:
     id: Optional[int]
@@ -25,7 +42,7 @@ class Veicolo:
             km_attuali=row[4] or 0,
             foto=row[5],
             note=row[6],
-            data_creazione=datetime.fromisoformat(row[7]) if row[7] else None
+            data_creazione=_as_datetime(row[7])
         )
 
     def to_dict(self):
@@ -59,14 +76,14 @@ class Manutenzione:
         return cls(
             id=row[0],
             veicolo_id=row[1],
-            data_intervento=datetime.strptime(row[2], '%Y-%m-%d').date() if row[2] else None,
+            data_intervento=_as_date(row[2]),
             km_intervento=row[3],
             tipo_manutenzione=row[4],
             descrizione=row[5],
             costo=row[6],
             prossima_manutenzione_km=row[7],
-            prossima_manutenzione_data=datetime.strptime(row[8], '%Y-%m-%d').date() if row[8] else None,
-            data_creazione=datetime.fromisoformat(row[9]) if row[9] else None
+            prossima_manutenzione_data=_as_date(row[8]),
+            data_creazione=_as_datetime(row[9])
         )
 
     def to_dict(self):
