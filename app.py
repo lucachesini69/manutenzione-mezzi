@@ -1,53 +1,18 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, Response
 from datetime import datetime, date
 import json
 import os
+import io
 from database import DatabaseManager
 from models import VeicoloService, ManutenzioneService, TIPI_MANUTENZIONE, TIPI_VEICOLI
-from local_sync_backup import LocalSyncBackup
-from apscheduler.schedulers.background import BackgroundScheduler
-import atexit
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
 
-# Inizializza il database
+# Inizializza il database (Postgres se DATABASE_URL è impostata, altrimenti SQLite locale)
 db_manager = DatabaseManager()
 veicolo_service = VeicoloService(db_manager)
 manutenzione_service = ManutenzioneService(db_manager)
-
-# Inizializza backup locale con sync
-backup_service = LocalSyncBackup()
-
-# Funzione di backup automatico
-def backup_automatico():
-    """Esegue il backup automatico del database"""
-    try:
-        print("🔄 Avvio backup automatico...")
-        success = backup_service.backup_database()
-        if success:
-            print("✅ Backup automatico completato")
-            backup_service.cleanup_old_backups(keep_count=10)
-        else:
-            print("❌ Backup automatico fallito")
-    except Exception as e:
-        print(f"❌ Errore durante backup automatico: {e}")
-
-# Configura scheduler per backup automatico (inizializzazione lazy)
-scheduler = None
-
-def init_scheduler():
-    """Inizializza scheduler in modo lazy"""
-    global scheduler
-    if scheduler is None and not os.environ.get('FLASK_ENV') == 'development':
-        try:
-            scheduler = BackgroundScheduler()
-            scheduler.add_job(func=backup_automatico, trigger="cron", hour=2, minute=0, id='backup_job')
-            scheduler.start()
-            print("Scheduler backup automatico avviato (ogni giorno alle 2:00)")
-            atexit.register(lambda: scheduler.shutdown())
-        except Exception as e:
-            print(f"Errore avvio scheduler: {e}")
 
 # Funzione per convertire decimali italiani
 def converti_decimale(valore_str):
@@ -79,9 +44,6 @@ def health_check():
 
 @app.route('/')
 def dashboard():
-    # Inizializza scheduler al primo accesso (lazy loading)
-    init_scheduler()
-
     veicoli = veicolo_service.get_tutti_veicoli()
     prossime_manutenzioni = manutenzione_service.get_prossime_manutenzioni()
     ultime_manutenzioni = manutenzione_service.get_tutte_manutenzioni()[:5]
@@ -287,28 +249,27 @@ def export_manutenzioni():
 
 @app.route('/backup')
 def backup_database():
+    """Scarica un backup JSON completo del database. Salvalo nella cartella OneDrive per averlo sincronizzato ovunque."""
     try:
+        veicoli = [v.to_dict() for v in veicolo_service.get_tutti_veicoli()]
+        manutenzioni = [m.to_dict() for m in manutenzione_service.get_tutte_manutenzioni()]
+        payload = {
+            'schema': 1,
+            'generato_il': datetime.now().isoformat(),
+            'veicoli': veicoli,
+            'manutenzioni': manutenzioni,
+        }
+        data = json.dumps(payload, ensure_ascii=False, indent=2).encode('utf-8')
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        backup_path = f'backup_manutenzione_{timestamp}.db'
-        db_manager.backup_database(backup_path)
-        return send_file(backup_path, as_attachment=True)
+        return send_file(
+            io.BytesIO(data),
+            mimetype='application/json',
+            as_attachment=True,
+            download_name=f'manutenzione_backup_{timestamp}.json',
+        )
     except Exception as e:
         flash(f'Errore durante il backup: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
-
-@app.route('/backup-local')
-def backup_to_local():
-    """Esegue backup locale con sync automatico"""
-    try:
-        success = backup_service.backup_database()
-        if success:
-            info = backup_service.get_backup_info()
-            flash(f'✅ Backup salvato in OneDrive! Cartella: {info["folder_path"]}', 'success')
-        else:
-            flash('❌ Errore durante il backup locale.', 'error')
-    except Exception as e:
-        flash(f'❌ Errore durante il backup: {str(e)}', 'error')
-    return redirect(url_for('dashboard'))
 
 @app.route('/api/veicoli/<int:veicolo_id>/km', methods=['PUT'])
 def aggiorna_km_api(veicolo_id):
@@ -370,8 +331,8 @@ def page_not_found(e):
 def internal_server_error(e):
     return render_template('500.html'), 500
 
-# Inizializza dati di esempio al primo avvio
-if not os.path.exists('manutenzione.db') or os.path.getsize('manutenzione.db') == 0:
+# Inizializza dati di esempio al primo avvio (solo se il DB è vuoto)
+if not veicolo_service.get_tutti_veicoli():
     print("Creazione dati di esempio...")
 
     # Veicoli di esempio
