@@ -1,0 +1,9 @@
+{
+	# Email usata per i certificati Let's Encrypt (opzionale ma consigliata)
+	email {$ACME_EMAIL}
+}
+
+# Caddy ottiene e rinnova automaticamente il certificato HTTPS per questo dominio
+{$DOMAIN} {
+	reverse_proxy web:8000
+}

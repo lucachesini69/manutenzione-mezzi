@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: manutenzione
+      POSTGRES_USER: manutenzione_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Imposta DB_PASSWORD nel file .env}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U manutenzione_user -d manutenzione"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://manutenzione_user:${DB_PASSWORD}@db:5432/manutenzione
+      PGSSLMODE: disable
+      SECRET_KEY: ${SECRET_KEY:?Imposta SECRET_KEY nel file .env}
+      APP_USERNAME: ${APP_USERNAME:-admin}
+      APP_PASSWORD: ${APP_PASSWORD:?Imposta APP_PASSWORD nel file .env}
+      FLASK_ENV: production
+      PORT: 8000
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?Imposta DOMAIN nel file .env}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:
