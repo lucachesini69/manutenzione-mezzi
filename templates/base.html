@@ -35,6 +35,13 @@
                         <span class="theme-toggle-icon">🌙</span>
                     </button>
                 </li>
+                {% if session.get('logged_in') %}
+                <li class="nav-item">
+                    <a href="{{ url_for('logout') }}" class="nav-link" title="Esci">
+                        Esci
+                    </a>
+                </li>
+                {% endif %}
             </ul>
         </div>
     </nav>

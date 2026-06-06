@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, Response
-from datetime import datetime, date
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, Response, session
+from datetime import datetime, date, timedelta
+import hmac
 import json
 import os
 import io
@@ -8,6 +9,68 @@ from models import VeicoloService, ManutenzioneService, TIPI_MANUTENZIONE, TIPI_
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
+app.permanent_session_lifetime = timedelta(days=7)
+
+# --- Autenticazione --------------------------------------------------------
+# La protezione si attiva impostando la variabile d'ambiente APP_PASSWORD.
+# Se APP_PASSWORD non è impostata (es. uso locale) l'app resta accessibile
+# senza login, per comodità in fase di sviluppo.
+APP_USERNAME = os.environ.get('APP_USERNAME', 'admin')
+APP_PASSWORD = os.environ.get('APP_PASSWORD')
+
+# Endpoint raggiungibili anche senza essere autenticati
+PUBLIC_ENDPOINTS = {'login', 'logout', 'health_check', 'static'}
+
+if not APP_PASSWORD:
+    print("ATTENZIONE: APP_PASSWORD non impostata: l'app e' accessibile SENZA login.")
+
+
+@app.before_request
+def require_login():
+    """Blocca l'accesso a tutte le pagine se non si è autenticati.
+
+    Disattivata se APP_PASSWORD non è configurata.
+    """
+    if not APP_PASSWORD:
+        return
+    if request.endpoint in PUBLIC_ENDPOINTS:
+        return
+    if not session.get('logged_in'):
+        return redirect(url_for('login', next=request.path))
+
+
+def _is_safe_next(target):
+    """Evita open redirect: accetta solo percorsi locali."""
+    return bool(target) and target.startswith('/') and not target.startswith('//')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    # Se la protezione è disattivata o si è già loggati, vai alla dashboard
+    if not APP_PASSWORD or session.get('logged_in'):
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        username = request.form.get('username', '')
+        password = request.form.get('password', '')
+        # Confronto a tempo costante per evitare timing attack
+        ok = hmac.compare_digest(username, APP_USERNAME) and \
+             hmac.compare_digest(password, APP_PASSWORD)
+        if ok:
+            session.permanent = True
+            session['logged_in'] = True
+            next_url = request.args.get('next')
+            return redirect(next_url if _is_safe_next(next_url) else url_for('dashboard'))
+        flash('Username o password non corretti', 'error')
+
+    return render_template('login.html')
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Disconnessione effettuata', 'success')
+    return redirect(url_for('login'))
 
 # Inizializza il database (Postgres se DATABASE_URL è impostata, altrimenti SQLite locale)
 db_manager = DatabaseManager()
