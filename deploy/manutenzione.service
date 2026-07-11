@@ -1,0 +1,24 @@
+# Servizio systemd per Gunicorn.
+# Copia in: /etc/systemd/system/manutenzione.service
+# Poi: sudo systemctl daemon-reload && sudo systemctl enable --now manutenzione
+
+[Unit]
+Description=Gestione Manutenzione Mezzi (Gunicorn)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+User=manutenzione
+Group=www-data
+WorkingDirectory=/opt/manutenzione-mezzi
+EnvironmentFile=/etc/manutenzione.env
+RuntimeDirectory=manutenzione
+ExecStart=/opt/manutenzione-mezzi/venv/bin/gunicorn \
+    --workers 2 \
+    --bind unix:/run/manutenzione/gunicorn.sock \
+    app:app
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
