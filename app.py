@@ -1,8 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, Response
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, Response, session
 from datetime import datetime, date
+from functools import wraps
 import json
 import os
 import io
+from werkzeug.security import generate_password_hash, check_password_hash
 from database import DatabaseManager
 from models import VeicoloService, ManutenzioneService, TIPI_MANUTENZIONE, TIPI_VEICOLI
 
@@ -13,6 +15,33 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
 db_manager = DatabaseManager()
 veicolo_service = VeicoloService(db_manager)
 manutenzione_service = ManutenzioneService(db_manager)
+
+# Rotte accessibili senza login
+ENDPOINT_PUBBLICI = {'login', 'health_check', 'static'}
+
+
+def crea_utente_iniziale():
+    """Crea un utente amministratore iniziale da variabili d'ambiente
+    (ADMIN_USERNAME / ADMIN_PASSWORD) se non esiste ancora nessun utente."""
+    if db_manager.conta_utenti() > 0:
+        return
+    admin_user = os.environ.get('ADMIN_USERNAME', 'admin')
+    admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin')
+    db_manager.inserisci_utente(admin_user, generate_password_hash(admin_pass))
+    print(f"Utente iniziale creato: '{admin_user}'")
+
+
+crea_utente_iniziale()
+
+
+@app.before_request
+def richiedi_login():
+    """Blocca l'accesso a tutte le rotte se l'utente non ha effettuato il login."""
+    if request.endpoint in ENDPOINT_PUBBLICI:
+        return None
+    if session.get('utente'):
+        return None
+    return redirect(url_for('login', next=request.path))
 
 # Funzione per convertire decimali italiani
 def converti_decimale(valore_str):
@@ -41,6 +70,73 @@ def health_check():
         'timestamp': datetime.now().isoformat(),
         'version': '1.0'
     }), 200
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if session.get('utente'):
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        username = (request.form.get('username') or '').strip()
+        password = request.form.get('password') or ''
+        utente = db_manager.get_utente_by_username(username)
+
+        # utente row: (id, username, password_hash, data_creazione)
+        if utente and check_password_hash(utente[2], password):
+            session['utente'] = username
+            next_url = request.args.get('next') or request.form.get('next')
+            return redirect(next_url or url_for('dashboard'))
+
+        flash('Nome utente o password non validi', 'error')
+        return redirect(url_for('login'))
+
+    return render_template('login.html')
+
+
+@app.route('/logout')
+def logout():
+    session.pop('utente', None)
+    flash('Disconnessione effettuata', 'success')
+    return redirect(url_for('login'))
+
+
+@app.route('/utenti', methods=['GET', 'POST'])
+def gestione_utenti():
+    if request.method == 'POST':
+        username = (request.form.get('username') or '').strip()
+        password = request.form.get('password') or ''
+
+        if not username or not password:
+            flash('Nome utente e password sono obbligatori', 'error')
+        elif db_manager.get_utente_by_username(username):
+            flash(f'L\'utente "{username}" esiste già', 'error')
+        else:
+            db_manager.inserisci_utente(username, generate_password_hash(password))
+            flash(f'Utente "{username}" creato con successo', 'success')
+        return redirect(url_for('gestione_utenti'))
+
+    utenti = db_manager.get_utenti()
+    return render_template('utenti.html', utenti=utenti, utente_corrente=session.get('utente'))
+
+
+@app.route('/utenti/<int:utente_id>/elimina', methods=['POST'])
+def elimina_utente(utente_id):
+    if db_manager.conta_utenti() <= 1:
+        flash('Non puoi eliminare l\'ultimo utente rimasto', 'error')
+        return redirect(url_for('gestione_utenti'))
+
+    utenti = {u[0]: u[1] for u in db_manager.get_utenti()}
+    username = utenti.get(utente_id)
+    if username == session.get('utente'):
+        flash('Non puoi eliminare l\'utente con cui hai effettuato l\'accesso', 'error')
+        return redirect(url_for('gestione_utenti'))
+
+    if db_manager.elimina_utente(utente_id):
+        flash(f'Utente "{username}" eliminato', 'success')
+    else:
+        flash('Utente non trovato', 'error')
+    return redirect(url_for('gestione_utenti'))
+
 
 @app.route('/')
 def dashboard():

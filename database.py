@@ -71,6 +71,14 @@ class DatabaseManager:
                         data_creazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                 ''')
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS utenti (
+                        id SERIAL PRIMARY KEY,
+                        username TEXT NOT NULL UNIQUE,
+                        password_hash TEXT NOT NULL,
+                        data_creazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
             else:
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS veicoli (
@@ -97,6 +105,14 @@ class DatabaseManager:
                         prossima_manutenzione_data DATE,
                         data_creazione DATETIME DEFAULT CURRENT_TIMESTAMP,
                         FOREIGN KEY (veicolo_id) REFERENCES veicoli (id) ON DELETE CASCADE
+                    )
+                ''')
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS utenti (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT NOT NULL UNIQUE,
+                        password_hash TEXT NOT NULL,
+                        data_creazione DATETIME DEFAULT CURRENT_TIMESTAMP
                     )
                 ''')
 
@@ -247,6 +263,43 @@ class DatabaseManager:
             '''), (veicolo_id, data_intervento, km_intervento, tipo_manutenzione,
                   descrizione, costo, prossima_manutenzione_km,
                   prossima_manutenzione_data, manutenzione_id))
+            conn.commit()
+            return cursor.rowcount > 0
+
+    # --- Gestione utenti ---
+    def inserisci_utente(self, username, password_hash):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            new_id = self._execute_insert(
+                cursor,
+                'INSERT INTO utenti (username, password_hash) VALUES (?, ?)',
+                (username, password_hash),
+            )
+            conn.commit()
+            return new_id
+
+    def get_utente_by_username(self, username):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(self._q('SELECT * FROM utenti WHERE username = ?'), (username,))
+            return cursor.fetchone()
+
+    def get_utenti(self):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM utenti ORDER BY username')
+            return cursor.fetchall()
+
+    def conta_utenti(self):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM utenti')
+            return cursor.fetchone()[0]
+
+    def elimina_utente(self, utente_id):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(self._q('DELETE FROM utenti WHERE id = ?'), (utente_id,))
             conn.commit()
             return cursor.rowcount > 0
 

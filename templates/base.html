@@ -31,6 +31,18 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="{{ url_for('gestione_utenti') }}" class="nav-link {% if request.endpoint in ['gestione_utenti', 'elimina_utente'] %}active{% endif %}">
+                        Utenti
+                    </a>
+                </li>
+                {% if session.get('utente') %}
+                <li class="nav-item">
+                    <a href="{{ url_for('logout') }}" class="nav-link" title="Disconnetti {{ session.get('utente') }}">
+                        Esci ({{ session.get('utente') }})
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
                     <button id="theme-toggle" class="theme-toggle" aria-label="Cambia tema">
                         <span class="theme-toggle-icon">🌙</span>
                     </button>

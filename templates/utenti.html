@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Utenti - Gestione Manutenzione Mezzi{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Gestione utenti</h1>
+    <p class="page-subtitle">Aggiungi o rimuovi gli utenti che possono accedere all'applicazione</p>
+</div>
+
+<div class="form-container">
+    <form method="POST" class="vehicle-form">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="username" class="form-label">Nome utente *</label>
+                <input type="text" id="username" name="username" class="form-input"
+                       required autocapitalize="none" autocomplete="off"
+                       placeholder="es. mario.rossi">
+            </div>
+            <div class="form-group">
+                <label for="password" class="form-label">Password *</label>
+                <input type="password" id="password" name="password" class="form-input"
+                       required autocomplete="new-password"
+                       placeholder="Scegli una password">
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">➕ Aggiungi utente</button>
+        </div>
+    </form>
+</div>
+
+<div class="tips-section">
+    <h3>Utenti registrati ({{ utenti|length }})</h3>
+    <table class="data-table" style="width:100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="text-align:left; padding:10px;">Nome utente</th>
+                <th style="text-align:right; padding:10px;">Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for utente in utenti %}
+            <tr>
+                <td style="padding:10px;">
+                    {{ utente[1] }}
+                    {% if utente[1] == utente_corrente %}
+                        <span class="badge">tu</span>
+                    {% endif %}
+                </td>
+                <td style="text-align:right; padding:10px;">
+                    {% if utente[1] != utente_corrente %}
+                    <form method="POST" action="{{ url_for('elimina_utente', utente_id=utente[0]) }}"
+                          style="display:inline;"
+                          onsubmit="return confirm('Eliminare l\'utente {{ utente[1] }}?');">
+                        <button type="submit" class="btn btn-sm btn-danger">🗑️ Elimina</button>
+                    </form>
+                    {% else %}
+                    <span style="color:#888; font-size:13px;">account in uso</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

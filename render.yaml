@@ -28,3 +28,10 @@ services:
         value: production
       - key: PYTHON_VERSION
         value: "3.11.0"
+      # Credenziali del primo utente amministratore (create solo al primo avvio,
+      # quando il database non contiene ancora nessun utente). Render ti chiederà
+      # di inserire questi valori durante il deploy del Blueprint.
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
