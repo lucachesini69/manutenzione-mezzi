@@ -1,0 +1,43 @@
+# Stack completo: applicazione Flask + database Postgres, entrambi in container.
+# Avvio:  docker compose up -d --build
+# Log:    docker compose logs -f web
+# Stop:   docker compose down   (i dati del DB restano nel volume "pgdata")
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: manutenzione
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: manutenzione
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U manutenzione"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://manutenzione:${DB_PASSWORD}@db:5432/manutenzione
+      PGSSLMODE: disable
+      SECRET_KEY: ${SECRET_KEY}
+      FLASK_ENV: production
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      PORT: 8000
+    # Pubblica l'app SOLO su localhost del server: il tuo reverse proxy
+    # esistente (Nginx/Traefik) la raggiunge su 127.0.0.1:${HOST_PORT}.
+    # Così non tocca le porte 80/443 usate dall'altra app.
+    ports:
+      - "127.0.0.1:${HOST_PORT:-8080}:8000"
+
+volumes:
+  pgdata:

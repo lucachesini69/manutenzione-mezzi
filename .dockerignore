@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.venv
+venv/
+env/
+ENV/
+*.db
+*.db-journal
+*.log
+.git
+.gitignore
+.DS_Store
+export_*.csv
